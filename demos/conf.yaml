@@ -1,0 +1,31 @@
+# -------------------------------------------------------------------
+#  Pin Assignment
+#  - Note:
+#     Rasberry-pi's GPIO pin must be the number of PIN, not GPIO number.
+# -------------------------------------------------------------------
+pin:
+  pin_switch: 10
+  pin_LED_red: 5
+  pin_LED_green: 7
+  pin_switch_LED: 13
+  pin_buzzer: 11
+  pin_servo: 3
+
+# -------------------------------------------------------------------
+#  IFTTT POST URL
+# -------------------------------------------------------------------
+IFTTT_URLs: ["https://maker.ifttt.com/trigger/423doorLog/with/key/qepiuPHA-kmCEsiFRBVdv04F0l2AdnygJa_y1kgHCl",  # Google SpreadSheet
+             "https://maker.ifttt.com/trigger/LINE_Notify_423room/with/key/qepiuPHA-kmCEsiFRBVdv04F0l2AdnygJa_y1kgHCl"  # Line Notify
+            ]
+
+# -------------------------------------------------------------------
+# database path to registrated IDm
+# -------------------------------------------------------------------
+database: "smartdoor.db"
+
+# -------------------------------------------------------------------
+# Room Name where smartdoor system is implemeted
+# - Note:
+#    database must have the Allow_"room" attribute (e.g. Allow_N2_423)
+# -------------------------------------------------------------------
+room: "N2_423"
