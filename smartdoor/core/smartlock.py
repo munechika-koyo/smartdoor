@@ -1,4 +1,3 @@
-
 import RPi.GPIO as GPIO
 import time
 
@@ -9,8 +8,38 @@ class SmartLock:
     """ SmartLock class
     This is used to initiate and control raspi GPIO pins, PWM (LED, servomotor), etc.
 
+    PWM instance methods is as follows:
+    >>> p = (some PWM instance properties)
+    >>> p.start(dc)  # Start PWM, dc: duty cycle (0.0 <= dc <= 100.0)
+    >>> p.ChangeFrequency(freq)  # Change Frequency, freq:new frequency [Hz]
+    >>> p.ChangeDutyCycle(dc)  # Change Duty Cylcle, (0.0 <= dc <= 100.0)
+    >>> p.stop()  # Stop PWM
+
     Parameters
     ----------
+    pin_switch : int
+        pin assignment for input signal from switch
+    pin_LED_red : int
+        pin assignment for output signal to red LED
+    pin_LED_green : int
+        pin assignment for output signal to green LED
+    pin_LED_switch : int
+        pin assignment for output signal to switch LED
+    pin_buzzer : int
+        pin assignment for output signal to buzzer
+    pin_servo : int
+        pin assignment for output signal to servomotor
+
+    Attributes
+    ----------
+    PWM_LED_red : PWM
+        Pulse Width Modulation instance for red LED
+    PWM_LED_green : PWM
+        Pulse Width Modulation instance for green LED
+    PWM_LED_switch : PWM
+        Pulse Width Modulation instance for switch LED
+    PWM_servo : PWM
+        Pulse Width Modulation instance for servomotor
 
     methods
     -------
@@ -21,7 +50,16 @@ class SmartLock:
         excute unlock seaquence
         (LED Blinking -> buzzer sounded -> servomotor moving -> LED lighting)
     """
-    def __init__(self, pin_switch=None, pin_LED_red=None, pin_LED_green=None, pin_LED_switch=None, pin_buzzer=None, pin_servo=None) -> None:
+
+    def __init__(
+        self,
+        pin_switch=None,
+        pin_LED_red=None,
+        pin_LED_green=None,
+        pin_LED_switch=None,
+        pin_buzzer=None,
+        pin_servo=None,
+    ) -> None:
         # configure pin assignment property
         self.pin_switch = pin_switch
         self.pin_LED_red = pin_LED_red
@@ -61,7 +99,7 @@ class SmartLock:
     @pin_switch.setter
     def pin_switch(self, value):
         if not isinstance(value, int):
-            raise ValueError("pin_switch must be integer.")
+            raise TypeError("pin_switch must be integer.")
         self._pin_switch = value
 
     @property
@@ -78,7 +116,7 @@ class SmartLock:
     @pin_LED_red.setter
     def pin_LED_red(self, value):
         if not isinstance(value, int):
-            raise ValueError("pin_LED_red must be integer.")
+            raise TypeError("pin_LED_red must be integer.")
         self._pin_LED_red = value
 
     @property
@@ -95,7 +133,7 @@ class SmartLock:
     @pin_LED_green.setter
     def pin_LED_green(self, value):
         if not isinstance(value, int):
-            raise ValueError("pin_LED_green must be integer.")
+            raise TypeError("pin_LED_green must be integer.")
         self._pin_LED_green = value
 
     @property
@@ -112,7 +150,7 @@ class SmartLock:
     @pin_LED_switch.setter
     def pin_LED_switch(self, value):
         if not isinstance(value, int):
-            raise ValueError("pin_LED_switch must be integer.")
+            raise TypeError("pin_LED_switch must be integer.")
         self._pin_LED_switch = value
 
     @property
@@ -129,7 +167,7 @@ class SmartLock:
     @pin_buzzer.setter
     def pin_buzzer(self, value):
         if not isinstance(value, int):
-            raise ValueError("pin_buzzer must be integer.")
+            raise TypeError("pin_buzzer must be integer.")
         self._pin_buzzer = value
 
     @property
@@ -146,7 +184,7 @@ class SmartLock:
     @pin_servo.setter
     def pin_servo(self, value):
         if not isinstance(value, int):
-            raise ValueError("pin_servo must be integer.")
+            raise TypeError("pin_servo must be integer.")
         self._pin_servo = value
 
     @property
@@ -214,7 +252,7 @@ class SmartLock:
             If true, the key is locked now, otherwise unlocked
         """
         if not isinstance(value, bool):
-            raise ValueError("locked must be a bool value")
+            raise TypeError("locked must be a bool value")
         self._locked = value
 
     def lock(self):
@@ -282,4 +320,25 @@ class SmartLock:
     def _check_pin_overlap(self):
         """check if pin number overlapes with others
         """
-        pass
+        # pin numbers
+        pin_numbers = [
+            self.pin_buzzer,
+            self.pin_LED_green,
+            self.pin_LED_red,
+            self.pin_LED_switch,
+            self.pin_servo,
+            self.pin_switch,
+        ]
+
+        for pin in pin_numbers:
+            if pin_numbers.count(pin) > 1:
+                raise Exception("detect overlaped pin assignment!")
+
+    def clean(self):
+        """clean PWM module and GPIO sequentially
+        """
+        self.PWM_LED_green.stop()
+        self.PWM_LED_red.stop()
+        self.PWM_LED_switch.stop()
+        self.PWM_servo.stop()
+        GPIO.cleanup()
