@@ -2,14 +2,14 @@ from smartdoor import SmartDoor
 from logging import config, getLogger
 
 
-# Set log
+# Set logger
 config.fileConfig("logging.conf")
 logger = getLogger()
 
 # Define path to conf.yaml
 path = "conf.yaml"
 
-# Instansionate
+# Instantiate
 door = SmartDoor(path=path, log=logger)
 
 # Set initial key status
