@@ -175,6 +175,7 @@ class SmartDoor(SmartLock):
             If the KeyboadInterrupt is detected, False.
         """
         rdwr_options = {"targets": ["212F"],  # detect only Felica
+                        "on-connect": lambda tag: False,
                         "iterations": 5,
                         "interval": 0.2}
         tag = self.clf.connect(rdwr=rdwr_options, terminate=self._teminate)
