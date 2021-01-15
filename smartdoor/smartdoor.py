@@ -210,7 +210,7 @@ class SmartDoor(SmartLock):
             the user name registerd in database
         """
         # extract idm
-        idm = hexlify(tag.idm)
+        idm = hexlify(tag.idm).decode("utf-8")
 
         # search database for the corresponding idm
         cursor = self.database.cursor()
