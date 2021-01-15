@@ -177,7 +177,7 @@ class SmartDoor(SmartLock):
         rdwr_options = {"targets": ["212F"],  # detect only Felica
                         "iterations": 5,
                         "interval": 0.2}
-        tag = self.clf.connect(rdwr=rdwr_options, terminate=self._teminate())
+        tag = self.clf.connect(rdwr=rdwr_options, terminate=self._teminate)
 
         return tag
 
