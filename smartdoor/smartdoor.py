@@ -275,11 +275,11 @@ class SmartDoor(SmartLock):
         if self.locked:
             self.unlock()
             action = "UNLOCK"
-            self.log.info("unlocked by" + user)
+            self.log.info("unlocked by " + user)
         else:
             self.lock()
             action = "LOCK"
-            self.log.info("locked by" + user)
+            self.log.info("locked by " + user)
 
         # post IFTTT
         self.post_IFTTT(user=user, action=action)
