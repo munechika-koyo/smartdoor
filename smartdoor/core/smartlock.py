@@ -240,7 +240,7 @@ class SmartLock:
         bool
             key's status (True:locked, False: unlocked)
         """
-        return self._unlocked
+        return self._locked
 
     @locked.setter
     def locked(self, value):
