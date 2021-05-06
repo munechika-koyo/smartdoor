@@ -22,7 +22,7 @@ logger.info("set initial door status as 'UNLOCKED'")
 door.start()
 try:
     while True:
-        # Wait for IC card toched
+        # Wait for IC card touched
         tag = door.wait_ICcard_touched()
 
         # If buttom is pushed
