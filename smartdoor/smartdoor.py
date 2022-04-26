@@ -1,6 +1,5 @@
 import os
 import datetime
-import sqlite3
 import requests
 import RPi.GPIO as GPIO
 from binascii import hexlify
@@ -8,7 +7,8 @@ from nfc import ContactlessFrontend
 from yaml import safe_load
 from logging import Logger, getLogger
 
-from smartdoor.core import SmartLock
+from .core import SmartLock
+from .core import AuthIDm
 
 
 class SmartDoor(SmartLock):
@@ -19,148 +19,91 @@ class SmartDoor(SmartLock):
     Parameters
     ----------
     path : str
-        path to conf.yaml where several configuration is written.
-    log : logging object
+        path to configure file formated by yaml where several configuration is written.
+    log : :obj:`.logging.RootLogger`
         logging instance
     """
     def __init__(self, path=None, log=None) -> None:
-        # Load configration from conf.yaml
+        # Load configration yaml file
         if path is None:
-            raise ValueError("must set the appropriate file path to 'conf.yaml'.")
-        filename, ext = os.path.splitext(os.path.basename(path))
-        if filename != "conf" or ext != ".yaml":
-            raise ValueError("must set the appropriate file path to 'conf.yaml'.")
+            raise ValueError("path must be the name to the appropriate configuration yaml file.")
+        _, ext = os.path.splitext(os.path.basename(path))
+        if ext != ".yaml":
+            raise ValueError("configuration file must be formated by yaml.")
         with open(path, "r") as f:
             conf = safe_load(f)
 
-        # initialize
+        # === Initialization ==================================================
+        # Logger
         self.log = log or getLogger(__name__)
-        self.URLs = conf["IFTTT_URLs"]  # IFTTT
-        self._database = sqlite3.connect(conf["database"])  # database
-        self._database.row_factory = sqlite3.Row
-        self._clf = ContactlessFrontend("usb")  # NFC reader
-        self._room = conf["room"]  # room name
-        self.post_list = []  # for IFTTT post
 
-        super().__init__(**conf["pin"])  # set pin assignment
+        # IFTTT
+        self.URLs = conf["IFTTT_URLs"]
+        self.post_list = []
+
+        # instantiate IDm authentication class
+        self._auth = AuthIDm(conf["database"], conf["room"])
+
+        # NFC reader
+        self._clf = ContactlessFrontend("usb")  # NFC reader
+
+        self._room = conf["room"]  # room name
+
+        # inheritance
+        super().__init__(**conf["pin"])
 
     @property
     def log(self):
-        """instance of Logger object
-
-        Returns
-        -------
-        logging.Logger
-            logging.Logger class
+        """
+        :obj:`.logging.RootLogger`: instance of Logger object
         """
         return self._log
 
     @log.setter
     def log(self, value):
-        """set the instance of Logger object
-
-        Parameters
-        ----------
-        value : logging.Logger
-            logging.Logger instance
-        """
         if not isinstance(value, Logger):
             raise TypeError("log must be an instance of logging.Logger")
         self._log = value
 
     @property
     def URLs(self):
-        """URL lists to post to IFTTT
-
-        Returns
-        -------
-        list
-            list contains URL strings to post to IFTTT
+        """
+        list: URL lists to post to IFTTT
         """
         return self._URLs
 
     @URLs.setter
     def URLs(self, value):
-        """set URL lists to post to IFTTT
-
-        Parameters
-        ----------
-        value : list
-            contains URLs (e.g. ["https://...", "https://..."])
-        """
         if not isinstance(value, list):
             raise TypeError("URLs must be list containg URL strings")
         self._URLs = value
 
     @property
     def post_list(self):
-        """list to post to IFTTT
-        This is a list containing dicts like
-        [{"value1":..., "value2": ..., "value3": ...}, ...],
-        to temporaly store such data in case that post requesting is suddenly canceled.
-
-        Returns
-        -------
-        list
-            containg dicts data to post IFTTT
+        """
+        list: dict values to post to IFTTT
         """
         return self._post_list
 
     @post_list.setter
     def post_list(self, value):
-        """list to post to IFTTT
-        This list must contain dicts like
-        [{"value1":..., "value2": ..., "value3": ...}, ...],
-        to temporaly store such data in case that post requesting is suddenly canceled.
-
-        Parameters
-        ----------
-        value : list
-            containg dicts data to post IFTTT
-        """
         if not isinstance(value, list):
             raise TypeError("post_list must be list.")
         self._post_list = value
 
     @property
     def clf(self):
-        """nfcpy's Contactless Frontend class instance
-        Contactless Frontend class provides several methods to make it easy to access
-        to the contactless functionality.
-
-        Returns
-        -------
-        nfc.clf.ContactlessFrontend
-            instance of Contactless Frontend class
+        """
+        :obj:`.nfc.clf.ContactlessFrontend`: nfcpy's Contactless Frontend class instance
         """
         return self._clf
 
     @property
-    def database(self):
-        """database storing user's idms
-        This database uses SQlite database system, and the database path
-        is configurable only by "conf.yaml"
-
-        Returns
-        -------
-        sqlite3.Connection
-            sqlite3 Connection object
+    def auth(self):
         """
-        return self._database
-
-    @property
-    def room(self):
-        """Room name where smartdoor system is implemeted.
-        This property is used when authenticating the authorized user,
-        e.g. a certain user is allowd to enter into room "N2_423".
-        This property is configurable only by "conf.yaml"
-
-        Returns
-        -------
-        str
-            room name e.g. "N2_423"
+        :obj:`.AuthIDm`: instance of AuthIDm class
         """
-        return self._room
+        return self._auth
 
     def wait_ICcard_touched(self):
         """waiting for IC card touched
@@ -169,7 +112,7 @@ class SmartDoor(SmartLock):
 
         Returns
         -------
-        tag : nfc.tag.Tag, None, or False
+        tag : :obj:`nfc.tag.Tag`
             the instance of nfcpy's Tag class.
             If the button is pushed, None.
             If the KeyboadInterrupt is detected, False.
@@ -201,31 +144,18 @@ class SmartDoor(SmartLock):
 
         Parameters
         ----------
-        tag : nfc.tag.Tag
-            the instance of nfcpy's Tag class, which is the return value as the clf.connect() method.
+        tag : :obj:`nfc.tag.Tag`
+            the instance of nfcpy's Tag class, which is the return value as the ``clf.connect()`` method.
 
         Returns
         -------
         str
-            the user name registerd in database
+            the user name registerd in database if not, None
         """
         # extract idm
         idm = hexlify(tag.idm).decode("utf-8")
 
-        # search database for the corresponding idm
-        cursor = self.database.cursor()
-        cursor.execute("SELECT * FROM smartdoor WHERE idm=?", (idm,))
-        result = cursor.fetchone()
-
-        # if no one is identified
-        if result is None:
-            return result
-        # if the user is allowed to control the specific room
-        elif result["Allow_" + self.room]:
-            return result["user"]
-        # if the user is not allowed
-        else:
-            return None
+        return self._auth.authenticate(idm)
 
     def post_IFTTT(self, user="test", action="test"):
         """post to IFTTT URL
@@ -242,7 +172,7 @@ class SmartDoor(SmartLock):
         """
         # get current datetime
         date_now = datetime.datetime.now()
-        date_str = date_now.strftime("%Y年%m月%d日 %H:%M:%S")
+        date_str = date_now.strftime(r"%Y/%m/%d %H:%M:%S")
         values = {"value1": date_str,
                   "value2": user,
                   "value3": action}
@@ -263,9 +193,9 @@ class SmartDoor(SmartLock):
 
     def door_sequence(self, user="test"):
         """door sequence
-        if door is locked, self.unlock() method is excuted, otherwise,
-        self.lock() method is excuted.
-        Afterwards, post_IFTTT() methods is excuted.
+        if door is locked, :obj:`.unlock` method is excuted, otherwise,
+        :obj:`.lock` method is excuted.
+        Afterwards, :obj:`.post_IFTTT` methods is excuted.
 
         Parameters
         ----------
@@ -295,7 +225,7 @@ class SmartDoor(SmartLock):
         self.log.info("invalid touched by an unauthorized user")
 
         # post warning message
-        self.post_IFTTT(user="許可されていないユーザー", action="INVALID TOUCH")
+        self.post_IFTTT(user="unauthorized user", action="INVALID TOUCH")
 
         # set previouse LED setting
         if self.locked:
@@ -325,5 +255,5 @@ class SmartDoor(SmartLock):
         """
         self.log.info("excute closing sequence")
         self.clf.close()  # close nfc contactlessfrontend instance
-        self.database.close()  # close database
+        self._auth.close()  # close database session
         self.clean()  # cleanup of raspi GPIO

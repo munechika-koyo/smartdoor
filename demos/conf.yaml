@@ -5,7 +5,7 @@
 # -------------------------------------------------------------------
 pin:
   pin_switch: 10  # input from push switch
-  pin_LED_red: 5　　# output to red LED
+  pin_LED_red: 5   # output to red LED
   pin_LED_green: 7  # output to green LED
   pin_switch_LED: 13  # output to push swith LED
   pin_buzzer: 11  # output to buzzer
@@ -17,22 +17,24 @@ pin:
 #  - Note:
 #     Post values to IFTTT Webhooks to trigger events
 #     contents: date, user name, action
-#        Example: "value1": "2021年06月21日 12:00:00"
+#        Example: "value1": "2021/06/21 12:00:00"
 #                 "value2": "unknown"
-#		  "value3": "LOCK"
+#                 "value3": "LOCK"
 #     must write your webhooks' request URLs
 # -------------------------------------------------------------------
-IFTTT_URLs: ["https://maker.ifttt.com/trigger/{event1}/with/key/{your key}",  # event 1
-             "https://maker.ifttt.com/trigger/{event2}/with/key/{your key}"  # evnet 2
-            ]
+IFTTT_URLs: [
+    "https://maker.ifttt.com/trigger/{event1}/with/key/{your key}",  # event 1
+    "https://maker.ifttt.com/trigger/{event2}/with/key/{your key}",  # evnet 2
+]
 #
 #
 # -------------------------------------------------------------------
-# database path to registrated IDm
+# database http address to registered key list
 # - Note:
-#    SQLite manages database containing user data (NFC's IDm)
+#   database is managed by web server which is developed at
+#   smartdoor_host (github: https://github.com/munechika-koyo/smartdoor_host)
 # -------------------------------------------------------------------
-database: "smartdoor.db"
+database: "http://smartdoor/authenticate/"
 #
 #
 # -------------------------------------------------------------------
@@ -40,4 +42,4 @@ database: "smartdoor.db"
 # - Note:
 #    database must have the Allow_"room" attribute (e.g. Allow_N2_423)
 # -------------------------------------------------------------------
-room: "N2_423"
+room: "423"
