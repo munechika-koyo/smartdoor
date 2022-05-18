@@ -22,7 +22,7 @@ class AuthIDm:
         try:
             # get csrf token in cookies
             session = Session()
-            session.get(url, timeout=timeout)
+            session.get(url, timeout=timeout, verify=False)
 
             # instantiate request object
             headers = {"Content-type": "application/json", "X-CSRFToken": session.cookies["csrftoken"]}
@@ -83,7 +83,7 @@ class AuthIDm:
         # request preparation
         prepared_req = self.session.prepare_request(self._request)
         try:
-            response = self._session.send(prepared_req, timeout=timeout)
+            response = self._session.send(prepared_req, timeout=timeout, verify=False)
             data = response.json()
 
             if data["auth"] == "valid":

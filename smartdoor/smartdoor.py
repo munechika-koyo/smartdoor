@@ -184,14 +184,14 @@ class SmartDoor(SmartLock):
         try:
             for URL in self.URLs:
                 for value in self.post_list:
-                    requests.post(URL, json=value, timeout=3.5)  # with 3.5 sec timeout
+                    requests.post(URL, json=value, timeout=5.0)
 
             # clear all components in list if successfully sending it.
             self.post_list.clear()
             self.log.info("IFTTT POST successed")
 
-        except Exception:  # in case of timeout
-            self.log.error("IFTTT POST failed")
+        except Exception as e:  # in case of timeout
+            self.log.error(e)
 
     def door_sequence(self, user="test"):
         """door sequence
