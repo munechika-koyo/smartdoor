@@ -117,10 +117,12 @@ class SmartDoor(SmartLock):
             If the button is pushed, None.
             If the KeyboadInterrupt is detected, False.
         """
-        rdwr_options = {"targets": ["212F"],  # detect only Felica
-                        "on-connect": lambda tag: False,
-                        "iterations": 5,
-                        "interval": 0.2}
+        rdwr_options = {
+            "targets": ["212F"],  # detect only Felica
+            "on-connect": lambda tag: False,
+            "iterations": 5,
+            "interval": 0.2,
+        }
         tag = self.clf.connect(rdwr=rdwr_options, terminate=self._teminate)
 
         return tag
@@ -175,9 +177,7 @@ class SmartDoor(SmartLock):
         # get current datetime
         date_now = datetime.datetime.now()
         date_str = date_now.strftime(r"%Y/%m/%d %H:%M:%S")
-        values = {"value1": date_str,
-                  "value2": user,
-                  "value3": action}
+        values = {"value1": date_str, "value2": user, "value3": action}
         # store post values temporaly
         self.post_list.append(values)
         # post values to URLs in 3.5 sec
@@ -239,7 +239,7 @@ class SmartDoor(SmartLock):
     def start(self):
         """start sequence
         put the LED on and off
-        start servomotor
+        start servomotor and buzzer
         """
         self.log.info("smartdoor system starts")
         if self.locked:
@@ -251,6 +251,7 @@ class SmartDoor(SmartLock):
 
         self.PWM_LED_switch.start(100)
         self.PWM_servo.start(0)
+        self.PWM_buzzer.start(0)
 
     def close(self):
         """close sequence

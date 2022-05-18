@@ -64,6 +64,7 @@ class SmartLock:
 
         # static pins
         pins_high = [10, 24]
+        GPIO.setup(pins_high, GPIO.OUT)
         GPIO.output(pins_high, True)
 
         # initialize PWM objects
