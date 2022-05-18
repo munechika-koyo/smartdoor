@@ -7,7 +7,7 @@ pin:
   pin_switch: 10  # input from push switch
   pin_LED_red: 5   # output to red LED
   pin_LED_green: 7  # output to green LED
-  pin_switch_LED: 13  # output to push swith LED
+  pin_LED_switch: 13  # output to push swith LED
   pin_buzzer: 11  # output to buzzer
   pin_servo: 3  # output to servomotor
 #
@@ -34,7 +34,7 @@ IFTTT_URLs: [
 #   database is managed by web server which is developed at
 #   smartdoor_host (github: https://github.com/munechika-koyo/smartdoor_host)
 # -------------------------------------------------------------------
-database: "http://smartdoor/authenticate/"
+database: "https://smartdoor/authenticate/"
 #
 #
 # -------------------------------------------------------------------

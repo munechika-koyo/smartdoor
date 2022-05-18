@@ -155,6 +155,8 @@ class SmartDoor(SmartLock):
         # extract idm
         idm = hexlify(tag.idm).decode("utf-8")
 
+        self.log.info(f"idm: {idm} is detected")
+
         return self._auth.authenticate(idm)
 
     def post_IFTTT(self, user="test", action="test"):
