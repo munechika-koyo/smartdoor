@@ -2,8 +2,8 @@
 Description = SmartDoor System
 
 [Service]
-WorkingDirectory = /home/pi/smartdoor/demos
-ExecStart = /usr/bin/python /home/pi/smartdoor/demos/AutoSequence.py
+WorkingDirectory = /home/pi/smartdoor/deploy
+ExecStart = /usr/bin/python /home/pi/smartdoor/deploy/main.py
 Restart = always
 Type = simple
 User = pi

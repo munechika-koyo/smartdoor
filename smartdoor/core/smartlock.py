@@ -17,28 +17,25 @@ class SmartLock:
 
     Parameters
     ----------
-    pin_switch : int
-        pin assignment for input signal from switch
-    pin_LED_red : int
-        pin assignment for output signal to red LED
-    pin_LED_green : int
-        pin assignment for output signal to green LED
-    pin_LED_switch : int
-        pin assignment for output signal to switch LED
-    pin_buzzer : int
-        pin assignment for output signal to buzzer
-    pin_servo : int
-        pin assignment for output signal to servomotor
+    pins : dict
+        pin assignment map
+        The following key must be included:
+        - switch: input signal from switch
+        - LED_red : output signal to red LED
+        - LED_green : output signal to green LED
+        - LED_switch : output signal to switch LED
+        - buzzer : output signal to buzzer
+        - servo : output signal to servomotor
 
     Attributes
     ----------
-    PWM_LED_red : PWM
+    PWM_LED_red : :obj:`GPIO.PWM`
         Pulse Width Modulation instance for red LED
-    PWM_LED_green : PWM
+    PWM_LED_green : :obj:`GPIO.PWM`
         Pulse Width Modulation instance for green LED
-    PWM_LED_switch : PWM
+    PWM_LED_switch : :obj:`GPIO.PWM`
         Pulse Width Modulation instance for switch LED
-    PWM_servo : PWM
+    PWM_servo : :obj:`GPIO.PWM`
         Pulse Width Modulation instance for servomotor
 
     methods
@@ -51,141 +48,38 @@ class SmartLock:
         (LED Blinking -> buzzer sounded -> servomotor moving -> LED lighting)
     """
 
-    def __init__(
-        self,
-        pin_switch=None,
-        pin_LED_red=None,
-        pin_LED_green=None,
-        pin_LED_switch=None,
-        pin_buzzer=None,
-        pin_servo=None,
-    ) -> None:
-        # configure pin assignment property
-        self.pin_switch = pin_switch
-        self.pin_LED_red = pin_LED_red
-        self.pin_LED_green = pin_LED_green
-        self.pin_LED_switch = pin_LED_switch
-        self.pin_buzzer = pin_buzzer
-        self.pin_servo = pin_servo
-
-        # check if pin number overlaps with others
-        self._check_pin_overlap()
+    def __init__(self, pins) -> None:
+        # confirm pin assignment
+        self.pins = pins
 
         # initialize pin setup
-        GPIO.setup(self.pin_switch, GPIO.IN)
-        GPIO.setup(self.pin_LED_red, GPIO.OUT)
-        GPIO.setup(self.pin_LED_green, GPIO.OUT)
-        GPIO.setup(self.pin_LED_switch, GPIO.OUT)
-        GPIO.setup(self.pin_buzzer, GPIO.OUT)
-        GPIO.setup(self.pin_servo, GPIO.OUT)
+        GPIO.setup(self.pins["switch"], GPIO.IN)
+        GPIO.setup(self.pins["LED_red"], GPIO.OUT)
+        GPIO.setup(self.pins["LED_green"], GPIO.OUT)
+        GPIO.setup(self.pins["LED_switch"], GPIO.OUT)
+        GPIO.setup(self.pins["buzzer"], GPIO.OUT)
+        GPIO.setup(self.pins["servo"], GPIO.OUT)
 
         # initialize PWM objects
-        self._PWM_LED_red = GPIO.PWM(self.pin_LED_red, 5)  # 5Hz PWM
-        self._PWM_LED_green = GPIO.PWM(self.pin_LED_green, 5)
-        self._PWM_LED_switch = GPIO.PWM(self.pin_LED_switch, 5)
-        self._PWM_servo = GPIO.PWM(self.pin_servo, 50)  # 50Hz PWM
+        self._PWM_LED_red = GPIO.PWM(self.pins["LED_red"], 5)  # 5Hz PWM
+        self._PWM_LED_green = GPIO.PWM(self.pins["LED_green"], 5)
+        self._PWM_LED_switch = GPIO.PWM(self.pins["LED_switch"], 5)
+        self._PWM_servo = GPIO.PWM(self.pins["servo"], 50)  # 50Hz PWM
+        self._PWM_buzzer = GPIO.PWM(self.pins["buzzer"], 2300)  # 880Hz
 
     @property
-    def pin_switch(self):
-        """pin number for switch
-
-        Returns
-        -------
-        int
-            pin number
+    def pins(self):
         """
-        return self._pin_switch
-
-    @pin_switch.setter
-    def pin_switch(self, value):
-        if not isinstance(value, int):
-            raise TypeError("pin_switch must be integer.")
-        self._pin_switch = value
-
-    @property
-    def pin_LED_red(self):
-        """pin number for red LED
-
-        Returns
-        -------
-        int
-            pin number
+        dict: pins asssignment map
         """
-        return self._pin_LED_red
+        return self._pins
 
-    @pin_LED_red.setter
-    def pin_LED_red(self, value):
-        if not isinstance(value, int):
-            raise TypeError("pin_LED_red must be integer.")
-        self._pin_LED_red = value
+    @pins.setter
+    def pins(self, value):
+        if not isinstance(value, dict):
+            raise TypeError("pins must be dict type.")
 
-    @property
-    def pin_LED_green(self):
-        """pin number for green LED
-
-        Returns
-        -------
-        int
-            pin number
-        """
-        return self._pin_LED_green
-
-    @pin_LED_green.setter
-    def pin_LED_green(self, value):
-        if not isinstance(value, int):
-            raise TypeError("pin_LED_green must be integer.")
-        self._pin_LED_green = value
-
-    @property
-    def pin_LED_switch(self):
-        """pin number for switch LED
-
-        Returns
-        -------
-        int
-            pin number
-        """
-        return self._pin_LED_switch
-
-    @pin_LED_switch.setter
-    def pin_LED_switch(self, value):
-        if not isinstance(value, int):
-            raise TypeError("pin_LED_switch must be integer.")
-        self._pin_LED_switch = value
-
-    @property
-    def pin_buzzer(self):
-        """pin number for buzzer
-
-        Returns
-        -------
-        int
-            pin number
-        """
-        return self._pin_buzzer
-
-    @pin_buzzer.setter
-    def pin_buzzer(self, value):
-        if not isinstance(value, int):
-            raise TypeError("pin_buzzer must be integer.")
-        self._pin_buzzer = value
-
-    @property
-    def pin_servo(self):
-        """pin number for servomotor
-
-        Returns
-        -------
-        int
-            pin number
-        """
-        return self._pin_servo
-
-    @pin_servo.setter
-    def pin_servo(self, value):
-        if not isinstance(value, int):
-            raise TypeError("pin_servo must be integer.")
-        self._pin_servo = value
+        self._pins = value
 
     @property
     def PWM_LED_red(self):
@@ -230,6 +124,17 @@ class SmartLock:
             instanse for GPIO PWM
         """
         return self._PWM_servo
+
+    @property
+    def PWM_buzzer(self):
+        """PWM instanse for buzzer
+
+        Returns
+        -------
+        GPIO PWM
+            instanse for GPIO PWM
+        """
+        return self._PWM_buzzer
 
     @property
     def locked(self):
@@ -313,21 +218,16 @@ class SmartLock:
         """
         for n in range(iteration):
             time.sleep(interval)
-            GPIO.output(self.pin_buzzer, True)
+            self.PWM_buzzer.ChangeDutyCycle(50)
             time.sleep(dt)
-            GPIO.output(self.pin_buzzer, False)
+            self.PWM_buzzer.ChangeDutyCycle(0)
 
     def _check_pin_overlap(self):
         """check if pin number overlapes with others
         """
         # pin numbers
         pin_numbers = [
-            self.pin_buzzer,
-            self.pin_LED_green,
-            self.pin_LED_red,
-            self.pin_LED_switch,
-            self.pin_servo,
-            self.pin_switch,
+            num for num in self.pins.values()
         ]
 
         for pin in pin_numbers:
@@ -341,4 +241,5 @@ class SmartLock:
         self.PWM_LED_red.stop()
         self.PWM_LED_switch.stop()
         self.PWM_servo.stop()
+        self.PWM_buzzer.stop()
         GPIO.cleanup()
