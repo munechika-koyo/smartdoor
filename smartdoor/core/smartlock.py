@@ -37,6 +37,8 @@ class SmartLock:
         Pulse Width Modulation instance for switch LED
     PWM_servo : :obj:`GPIO.PWM`
         Pulse Width Modulation instance for servomotor
+    PWM_buzzer : :obj:`GPIO.PWM`
+        Pulse Width Modulation instance for buzzer
 
     methods
     -------
