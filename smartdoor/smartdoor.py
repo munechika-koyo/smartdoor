@@ -50,7 +50,7 @@ class SmartDoor(SmartLock):
         self._room = conf["room"]  # room name
 
         # inheritance
-        super().__init__(**conf["pin"])
+        super().__init__(conf["pin"])
 
     @property
     def log(self):
@@ -135,7 +135,7 @@ class SmartDoor(SmartLock):
             If the button is pushed, True
             Otherwise, False.
         """
-        return bool(GPIO.input(self.pin_switch))
+        return bool(GPIO.input(self.pins["switch"]))
 
     def authenticate(self, tag):
         """Authenticate the approved user
