@@ -62,6 +62,10 @@ class SmartLock:
         GPIO.setup(self.pins["buzzer"], GPIO.OUT)
         GPIO.setup(self.pins["servo"], GPIO.OUT)
 
+        # static pins
+        pins_high = [10, 24]
+        GPIO.output(pins_high, True)
+
         # initialize PWM objects
         self._PWM_LED_red = GPIO.PWM(self.pins["LED_red"], 5)  # 5Hz PWM
         self._PWM_LED_green = GPIO.PWM(self.pins["LED_green"], 5)

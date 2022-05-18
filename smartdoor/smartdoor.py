@@ -135,7 +135,7 @@ class SmartDoor(SmartLock):
             If the button is pushed, True
             Otherwise, False.
         """
-        return bool(GPIO.input(self.pins["switch"]))
+        return not bool(GPIO.input(self.pins["switch"]))
 
     def authenticate(self, tag):
         """Authenticate the approved user
