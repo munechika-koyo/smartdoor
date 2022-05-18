@@ -4,12 +4,12 @@
 #     Rasberry-pi's GPIO pin must be the number of PIN, not GPIO number.
 # -------------------------------------------------------------------
 pin:
-  pin_switch: 10  # input from push switch
-  pin_LED_red: 5   # output to red LED
-  pin_LED_green: 7  # output to green LED
-  pin_LED_switch: 13  # output to push swith LED
-  pin_buzzer: 11  # output to buzzer
-  pin_servo: 3  # output to servomotor
+  switch: 10  # input from push switch
+  LED_red: 5   # output to red LED
+  LED_green: 7  # output to green LED
+  LED_switch: 13  # output to push swith LED
+  buzzer: 11  # output to buzzer
+  servo: 3  # output to servomotor
 #
 #
 # -------------------------------------------------------------------
