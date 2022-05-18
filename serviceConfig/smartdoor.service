@@ -1,0 +1,13 @@
+[Unit]
+Description = SmartDoor System
+
+[Service]
+WorkingDirectory = /home/pi/smartdoor
+ExecStart = /usr/bin/python /home/pi/smartdoor/demos/AutoSequence.py
+Restart  = always
+Type     = simple
+Environment=CURL_CA_BUNDLE=""
+
+
+[Install]
+WantedBy = multi-user.target
