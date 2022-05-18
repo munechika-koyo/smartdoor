@@ -2,11 +2,12 @@
 Description = SmartDoor System
 
 [Service]
-WorkingDirectory = /home/pi/smartdoor
+WorkingDirectory = /home/pi/smartdoor/demos
 ExecStart = /usr/bin/python /home/pi/smartdoor/demos/AutoSequence.py
-Restart  = always
-Type     = simple
-Environment=CURL_CA_BUNDLE=""
+Restart = always
+Type = simple
+User = pi
+Group = pi
 
 
 [Install]
