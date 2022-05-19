@@ -185,7 +185,7 @@ class SmartLock:
         # control servomotor
         self.PWM_servo.ChangeDutyCycle(7.5)  # positioning
         time.sleep(0.3)
-        self.PWM_servo.ChangeDutyCycle(12.5)  # rotate -90 deg
+        self.PWM_servo.ChangeDutyCycle(12)  # rotate -90 deg
         time.sleep(0.5)
         self.PWM_servo.ChangeDutyCycle(7.5)  # rotate 0 deg
         time.sleep(0.5)
