@@ -66,6 +66,10 @@ class SmartLock:
         self._PWM_LED_switch = GPIO.PWM(self.pins["LED_switch"], 5)
         self._PWM_servo = GPIO.PWM(self.pins["servo"], 50)  # 50Hz PWM
 
+        # initialize locked property to avoid expected behavior
+        self._locked = None
+
+
     @property
     def pins(self):
         """
