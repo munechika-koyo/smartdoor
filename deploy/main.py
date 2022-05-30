@@ -1,7 +1,14 @@
 import os
 from smartdoor import SmartDoor
 from logging import config, getLogger
+import urllib3
+from urllib3.exceptions import InsecureRequestWarning
 
+
+# set invisible of https secure warning
+urllib3.disable_warnings(InsecureRequestWarning)
+
+# Base Path
 DIR = os.path.dirname(__file__)
 
 # Set logger
@@ -51,6 +58,9 @@ try:
             # Not implemented yet when interrupting
             logger.info("KeyboardInterrupt occured")
             raise KeyboardInterrupt
+
+except Eception as e:
+    log.error(e)
 
 finally:
     door.close()
