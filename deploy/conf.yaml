@@ -33,7 +33,7 @@ IFTTT_URLs: [
 #   database is managed by web server which is developed at
 #   smartdoor_host (github: https://github.com/munechika-koyo/smartdoor_host)
 # -------------------------------------------------------------------
-database: "https://423key.local/authenticate/"
+database: "https://423key.torus.nr.titech.ac.jp/authenticate/"
 #
 #
 # -------------------------------------------------------------------
