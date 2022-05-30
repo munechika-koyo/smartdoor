@@ -59,7 +59,7 @@ try:
             logger.info("KeyboardInterrupt occured")
             raise KeyboardInterrupt
 
-except Eception as e:
+except Exception as e:
     logger.error(e)
 
 finally:
