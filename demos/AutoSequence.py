@@ -1,7 +1,13 @@
 import os
 from smartdoor import SmartDoor
 from logging import config, getLogger
+from urllib3.exceptions import InsecureRequestWarning
 
+
+# set invisible of https secure warning
+urllib3.disable_warnings(InsecureRequestWarning)
+
+# Base Path
 DIR = os.path.dirname(__file__)
 
 # Set logger
