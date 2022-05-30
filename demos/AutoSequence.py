@@ -53,4 +53,5 @@ try:
             raise KeyboardInterrupt
 
 finally:
+    looger.info("Cleaning up...")
     door.close()
