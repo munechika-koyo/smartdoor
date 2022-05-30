@@ -1,5 +1,6 @@
 [Unit]
 Description = SmartDoor System
+After = smartdoor_host.service
 
 [Service]
 WorkingDirectory = /home/pi/smartdoor/deploy
