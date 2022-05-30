@@ -9,7 +9,7 @@ Restart = always
 Type = simple
 User = pi
 Group = pi
-
+KillSignal=SIGINT
 
 [Install]
 WantedBy = multi-user.target
