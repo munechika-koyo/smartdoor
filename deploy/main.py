@@ -30,6 +30,7 @@ door.start()
 try:
     while True:
         # Wait for IC card touched
+        logger.info("Waiting NFC card touched...")
         tag = door.wait_ICcard_touched()
 
         # If buttom is pushed
@@ -56,8 +57,8 @@ try:
         # If keyInterrupt (tag == False)
         else:
             # Not implemented yet when interrupting
-            logger.info("KeyboardInterrupt occured")
-            raise KeyboardInterrupt
+            logger.info("tag == false")
+            break
 
 except Exception as e:
     logger.error(e)
