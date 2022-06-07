@@ -69,7 +69,6 @@ class SmartLock:
         # initialize locked property to avoid expected behavior
         self._locked = None
 
-
     @property
     def pins(self):
         """
