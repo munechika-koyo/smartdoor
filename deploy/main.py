@@ -64,5 +64,4 @@ except Exception as e:
     logger.error(e)
 
 finally:
-    logger.info("Cleaning up...")
     door.close()
