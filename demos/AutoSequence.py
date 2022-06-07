@@ -1,6 +1,7 @@
 import os
 from smartdoor import SmartDoor
 from logging import config, getLogger
+import urllib3
 from urllib3.exceptions import InsecureRequestWarning
 
 
@@ -59,5 +60,4 @@ try:
             raise KeyboardInterrupt
 
 finally:
-    looger.info("Cleaning up...")
     door.close()
