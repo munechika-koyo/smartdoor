@@ -255,7 +255,8 @@ class SmartDoor(SmartLock):
     def close(self):
         """close sequence
         """
-        self.log.info("excute closing sequence")
+        self.log.info("excute closing sequence...")
         self.clf.close()  # close nfc contactlessfrontend instance
         self._auth.close()  # close database session
         self.clean()  # cleanup of raspi GPIO
+        self.log.info("smartdoor system normally closed.")
