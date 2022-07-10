@@ -1,0 +1,6 @@
+[Unit]
+Description=Restart Smartdoor App
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/systemctl restart smartdoor.service

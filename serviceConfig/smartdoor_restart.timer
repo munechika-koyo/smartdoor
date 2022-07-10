@@ -1,0 +1,9 @@
+[Unit]
+Description=schedule restart smartdoor_restart
+
+[Timer]
+Unit=smartdoor_restart.service
+OnCalendar=*-*-* 0:00:00
+
+[Install]
+WantedBy=timers.target

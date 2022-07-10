@@ -22,8 +22,8 @@ path = os.path.join(DIR, "conf.yaml")
 door = SmartDoor(path=path, log=logger)
 
 # Set initial key status
-door.locked = False
-logger.info("set initial door status as 'UNLOCKED'")
+door.locked = True
+logger.info(f"set initial door status {door.locked=:} ")
 
 # SmartDoor seaquence starts
 door.start()
