@@ -4,6 +4,7 @@ import requests
 import RPi.GPIO as GPIO
 from binascii import hexlify
 from nfc import ContactlessFrontend
+from collections import deque
 from yaml import safe_load
 from logging import Logger, getLogger
 
@@ -38,16 +39,17 @@ class SmartDoor(SmartLock):
         self.log = log or getLogger(__name__)
 
         # IFTTT
-        self.URLs = conf["IFTTT_URLs"]
-        self.post_list = []
+        self.urls = conf["IFTTT_URLs"]
+        self._post_queue = deque()
 
         # instantiate IDm authentication class
         self._auth = AuthIDm(conf["database"], conf["room"])
 
         # NFC reader
-        self._clf = ContactlessFrontend("usb")  # NFC reader
+        self._clf = ContactlessFrontend("usb")
 
-        self._room = conf["room"]  # room name
+        # room name
+        self._room = conf["room"]
 
         # inheritance
         super().__init__(conf["pin"])
@@ -66,30 +68,24 @@ class SmartDoor(SmartLock):
         self._log = value
 
     @property
-    def URLs(self):
+    def urls(self):
         """
         list: URL lists to post to IFTTT
         """
-        return self._URLs
+        return self._urls
 
-    @URLs.setter
-    def URLs(self, value):
+    @urls.setter
+    def urls(self, value):
         if not isinstance(value, list):
-            raise TypeError("URLs must be list containg URL strings")
-        self._URLs = value
+            raise TypeError("urls must be list containg URL strings")
+        self._urls = value
 
     @property
-    def post_list(self):
+    def post_queue(self):
         """
-        list: dict values to post to IFTTT
+        :obj:~`collections.deque`: queue to store values to post them to IFTTT
         """
-        return self._post_list
-
-    @post_list.setter
-    def post_list(self, value):
-        if not isinstance(value, list):
-            raise TypeError("post_list must be list.")
-        self._post_list = value
+        return self._post_queue
 
     @property
     def clf(self):
@@ -154,15 +150,24 @@ class SmartDoor(SmartLock):
         str
             the user name registerd in database if not, None
         """
+        # turn on the both red and green LEDs
+        if self.locked:
+            self.PWM_LED_green.ChangeDutyCycle(100)
+        else:
+            self.PWM_LED_red.ChangeDutyCycle(100)
+
         # extract idm
         idm = hexlify(tag.idm).decode("utf-8")
 
         self.log.info(f"idm: {idm} is detected")
 
-        return self._auth.authenticate(idm)
+        # authentication
+        name = self._auth.authenticate(idm)
+
+        return name
 
     def post_IFTTT(self, user="test", action="test"):
-        """post to IFTTT URL
+        """post values to IFTTT
         This method posts the info about
         {"value1": data, "value2": user, "value3": action}
         as a json format. The action means the smartdoor action like a "LOCK", "UNLOCK", etc.
@@ -177,21 +182,23 @@ class SmartDoor(SmartLock):
         # get current datetime
         date_now = datetime.datetime.now()
         date_str = date_now.strftime(r"%Y/%m/%d %H:%M:%S")
-        values = {"value1": date_str, "value2": user, "value3": action}
-        # store post values temporaly
-        self.post_list.append(values)
-        # post values to URLs in 3.5 sec
-        try:
-            for URL in self.URLs:
-                for value in self.post_list:
-                    requests.post(URL, json=value, timeout=5.0)
 
-            # clear all components in list if successfully sending it.
-            self.post_list.clear()
+        # cache values into a queue
+        values = {"value1": date_str, "value2": user, "value3": action}
+        self.post_queue.append(values)
+
+        # post values to urls in 3.0 sec
+        try:
+            while self.post_queue:
+                data = self.post_queue.popleft()
+                for url in self.urls:
+                    requests.post(url, json=data, timeout=3.0)
+
             self.log.info("IFTTT POST successed")
 
-        except Exception as e:  # in case of timeout
+        except TimeoutError as e:  # in case of timeout
             self.log.error(e)
+            self._post_queue.appendleft(data)
 
     def door_sequence(self, user="test"):
         """door sequence
@@ -256,7 +263,8 @@ class SmartDoor(SmartLock):
     def close(self):
         """close sequence
         """
-        self.log.info("excute closing sequence")
+        self.log.info("excute closing sequence...")
         self.clf.close()  # close nfc contactlessfrontend instance
         self._auth.close()  # close database session
         self.clean()  # cleanup of raspi GPIO
+        self.log.info("smartdoor system normally closed.")

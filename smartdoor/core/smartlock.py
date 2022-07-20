@@ -74,6 +74,9 @@ class SmartLock:
         self._PWM_servo = GPIO.PWM(self.pins["servo"], 50)  # 50Hz PWM
         self._PWM_buzzer = GPIO.PWM(self.pins["buzzer"], 2300)  # 880Hz
 
+        # initialize locked property to avoid expected behavior
+        self._locked = None
+
     @property
     def pins(self):
         """
