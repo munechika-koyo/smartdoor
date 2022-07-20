@@ -57,7 +57,7 @@ class AuthIDm:
         """
         return self._room
 
-    def authenticate(self, idm, timeout=10):
+    def authenticate(self, idm, timeout=5):
         """
         IDm authentication method
         If the given idm is validated, returns user name which is registered in database.
