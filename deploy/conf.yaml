@@ -1,0 +1,44 @@
+# -------------------------------------------------------------------
+#  Pin Assignment
+#  - Note:
+#     Rasberry-pi's GPIO pin must be the number of PIN, not GPIO number.
+# -------------------------------------------------------------------
+pin:
+  switch: 12  # input from push switch
+  LED_red: 38   # output to red LED
+  LED_green: 36  # output to green LED
+  LED_switch: 16  # output to push swith LED
+  buzzer: 32  # output to buzzer
+  servo: 8  # output to servomotor
+#
+#
+# -------------------------------------------------------------------
+#  IFTTT POST URL
+#  - Note:
+#     Post values to IFTTT Webhooks to trigger events
+#     contents: date, user name, action
+#        Example: "value1": "2021/06/21 12:00:00"
+#                 "value2": "unknown"
+#                 "value3": "LOCK"
+#     must write your webhooks' request URLs
+# -------------------------------------------------------------------
+IFTTT_URLs: [
+    "https://maker.ifttt.com/trigger/LINE_Notify_475room/with/key/qepiuPHA-kmCEsiFRBVdv04F0l2AdnygJa_y1kgHCl",  # Line Notify
+]
+#
+#
+# -------------------------------------------------------------------
+# database http address to registered key list
+# - Note:
+#   database is managed by web server which is developed at
+#   smartdoor_host (github: https://github.com/munechika-koyo/smartdoor_host)
+# -------------------------------------------------------------------
+database: "https://423key.torus.nr.titech.ac.jp/authenticate/"
+#
+#
+# -------------------------------------------------------------------
+# Room Name where smartdoor system is implemeted
+# - Note:
+#    database must have the Allow_"room" attribute (e.g. Allow_N2_423)
+# -------------------------------------------------------------------
+room: "475"

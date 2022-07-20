@@ -37,6 +37,8 @@ class SmartLock:
         Pulse Width Modulation instance for switch LED
     PWM_servo : :obj:`GPIO.PWM`
         Pulse Width Modulation instance for servomotor
+    PWM_buzzer : :obj:`GPIO.PWM`
+        Pulse Width Modulation instance for buzzer
 
     methods
     -------
@@ -60,11 +62,17 @@ class SmartLock:
         GPIO.setup(self.pins["buzzer"], GPIO.OUT)
         GPIO.setup(self.pins["servo"], GPIO.OUT)
 
+        # static pins
+        pins_high = [10, 24]
+        GPIO.setup(pins_high, GPIO.OUT)
+        GPIO.output(pins_high, True)
+
         # initialize PWM objects
         self._PWM_LED_red = GPIO.PWM(self.pins["LED_red"], 5)  # 5Hz PWM
         self._PWM_LED_green = GPIO.PWM(self.pins["LED_green"], 5)
         self._PWM_LED_switch = GPIO.PWM(self.pins["LED_switch"], 5)
         self._PWM_servo = GPIO.PWM(self.pins["servo"], 50)  # 50Hz PWM
+        self._PWM_buzzer = GPIO.PWM(self.pins["buzzer"], 2300)  # 880Hz
 
         # initialize locked property to avoid expected behavior
         self._locked = None
@@ -126,6 +134,17 @@ class SmartLock:
             instanse for GPIO PWM
         """
         return self._PWM_servo
+
+    @property
+    def PWM_buzzer(self):
+        """PWM instanse for buzzer
+
+        Returns
+        -------
+        GPIO PWM
+            instanse for GPIO PWM
+        """
+        return self._PWM_buzzer
 
     @property
     def locked(self):
@@ -209,9 +228,9 @@ class SmartLock:
         """
         for n in range(iteration):
             time.sleep(interval)
-            GPIO.output(self.pins["buzzer"], True)
+            self.PWM_buzzer.ChangeDutyCycle(50)
             time.sleep(dt)
-            GPIO.output(self.pins["buzzer"], False)
+            self.PWM_buzzer.ChangeDutyCycle(0)
 
     def _check_pin_overlap(self):
         """check if pin number overlapes with others
@@ -232,4 +251,5 @@ class SmartLock:
         self.PWM_LED_red.stop()
         self.PWM_LED_switch.stop()
         self.PWM_servo.stop()
+        self.PWM_buzzer.stop()
         GPIO.cleanup()

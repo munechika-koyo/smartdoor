@@ -133,7 +133,7 @@ class SmartDoor(SmartLock):
             If the button is pushed, True
             Otherwise, False.
         """
-        return bool(GPIO.input(self.pins["switch"]))
+        return not bool(GPIO.input(self.pins["switch"]))
 
     def authenticate(self, tag):
         """Authenticate the approved user
@@ -246,7 +246,7 @@ class SmartDoor(SmartLock):
     def start(self):
         """start sequence
         put the LED on and off
-        start servomotor
+        start servomotor and buzzer
         """
         self.log.info("smartdoor system starts")
         if self.locked:
@@ -258,6 +258,7 @@ class SmartDoor(SmartLock):
 
         self.PWM_LED_switch.start(100)
         self.PWM_servo.start(0)
+        self.PWM_buzzer.start(0)
 
     def close(self):
         """close sequence
