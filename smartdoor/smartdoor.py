@@ -151,7 +151,7 @@ class SmartDoor(SmartLock):
             the user name registerd in database if not, None
         """
         # turn on the both red and green LEDs
-        if self.looked:
+        if self.locked:
             self.PWM_LED_green.ChangeDutyCycle(100)
         else:
             self.PWM_LED_red.ChangeDutyCycle(100)
