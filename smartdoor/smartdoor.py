@@ -1,6 +1,7 @@
 import os
 import datetime
 import requests
+from requests.exceptions import Timeout, TooManyRedirects, RequestException
 import RPi.GPIO as GPIO
 from binascii import hexlify
 from nfc import ContactlessFrontend
@@ -194,11 +195,20 @@ class SmartDoor(SmartLock):
                 for url in self.urls:
                     requests.post(url, json=data, timeout=3.0)
 
-            self.log.info("IFTTT POST successed")
+            self.log.info("The IFTTT POST process has finished successfully.")
 
-        except TimeoutError as e:  # in case of timeout
-            self.log.error(e)
+        except Timeout as e:
+            self.log.error(f"Timeout Error: {e}")
             self._post_queue.appendleft(data)
+
+        except TooManyRedirects as e:
+            self.log.error(f"TooManyRedirects Error: {e}")
+            self._post_queue.appendleft(data)
+        
+        except RequestException as e:
+            self.log.error(f"RequestException Error: {e}")
+            raise SystemExit(e)
+
 
     def door_sequence(self, user="test"):
         """door sequence
