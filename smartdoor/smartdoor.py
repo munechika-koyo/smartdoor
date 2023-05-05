@@ -79,6 +79,7 @@ class SmartDoor(SmartLock):
     def urls(self, value):
         if not isinstance(value, list):
             raise TypeError("urls must be list containg URL strings")
+        # TODO: check if each url is valid
         self._urls = value
 
     @property
@@ -206,8 +207,8 @@ class SmartDoor(SmartLock):
             self._post_queue.appendleft(data)
         
         except RequestException as e:
-            self.log.error(f"RequestException Error: {e}")
-            raise SystemExit(e)
+            self.log.error(f"{type(e)}: {e}")
+            self._post_queue.appendleft(data)
 
 
     def door_sequence(self, user="test"):
