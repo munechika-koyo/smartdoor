@@ -1,25 +1,24 @@
-import RPi.GPIO as GPIO
-import time
+"""Module for SmartLock class"""
+from time import sleep
+from gpiozero import LED, Buzzer, Button, Servo
+from gpiozero.pins.pigpio import PiGPIOFactory
+from logging import getLogger
 
-GPIO.setmode(GPIO.BOARD)  # PIN number is used, not GPIO
+
+logger = getLogger(__name__)
+factory = PiGPIOFactory()
 
 
 class SmartLock:
-    """ SmartLock class
-    This is used to initiate and control raspi GPIO pins, PWM (LED, servomotor), etc.
-
-    PWM instance methods is as follows:
-    >>> p = (some PWM instance properties)
-    >>> p.start(dc)  # Start PWM, dc: duty cycle (0.0 <= dc <= 100.0)
-    >>> p.ChangeFrequency(freq)  # Change Frequency, freq:new frequency [Hz]
-    >>> p.ChangeDutyCycle(dc)  # Change Duty Cylcle, (0.0 <= dc <= 100.0)
-    >>> p.stop()  # Stop PWM
+    """This class is used to control raspberry Pi's GPIO devices (LEDs, Buzzer, servomotor, etc.).
 
     Parameters
     ----------
-    pins : dict
-        pin assignment map
-        The following key must be included:
+    pins
+        pin assignment key-value map
+
+        The following keys must be included:
+
         - switch: input signal from switch
         - LED_red : output signal to red LED
         - LED_green : output signal to green LED
@@ -27,18 +26,7 @@ class SmartLock:
         - buzzer : output signal to buzzer
         - servo : output signal to servomotor
 
-    Attributes
-    ----------
-    PWM_LED_red : :obj:`GPIO.PWM`
-        Pulse Width Modulation instance for red LED
-    PWM_LED_green : :obj:`GPIO.PWM`
-        Pulse Width Modulation instance for green LED
-    PWM_LED_switch : :obj:`GPIO.PWM`
-        Pulse Width Modulation instance for switch LED
-    PWM_servo : :obj:`GPIO.PWM`
-        Pulse Width Modulation instance for servomotor
-
-    methods
+    Methods
     -------
     lock()
         excute lock seaquence
@@ -47,32 +35,31 @@ class SmartLock:
         excute unlock seaquence
         (LED Blinking -> buzzer sounded -> servomotor moving -> LED lighting)
     """
-
-    def __init__(self, pins) -> None:
-        # confirm pin assignment
+    def __init__(self, pins: dict[str, int]) -> None:
+        # validate pin assignment
         self.pins = pins
 
-        # initialize pin setup
-        GPIO.setup(self.pins["switch"], GPIO.IN)
-        GPIO.setup(self.pins["LED_red"], GPIO.OUT)
-        GPIO.setup(self.pins["LED_green"], GPIO.OUT)
-        GPIO.setup(self.pins["LED_switch"], GPIO.OUT)
-        GPIO.setup(self.pins["buzzer"], GPIO.OUT)
-        GPIO.setup(self.pins["servo"], GPIO.OUT)
+        # Initialize GPIO devices
+        # === LED ===
+        self.led_red = LED(pins["LED_red"])
+        self.led_green = LED(pins["LED_green"])
+        self.led_switch = LED(pins["LED_switch"])
 
-        # initialize PWM objects
-        self._PWM_LED_red = GPIO.PWM(self.pins["LED_red"], 5)  # 5Hz PWM
-        self._PWM_LED_green = GPIO.PWM(self.pins["LED_green"], 5)
-        self._PWM_LED_switch = GPIO.PWM(self.pins["LED_switch"], 5)
-        self._PWM_servo = GPIO.PWM(self.pins["servo"], 50)  # 50Hz PWM
+        # === Push button switch ===
+        self.switch = Button(pins["switch"])
 
-        # initialize locked property to avoid expected behavior
-        self._locked = None
+        # === Buzzer ===
+        self.buzzer = Buzzer(pins["buzzer"])
+
+        # === Servo ===
+        self.servo = Servo(pins["servo"], pin_factory=factory)
+
+        # initialize locked property to avoid unexpected behavior
+        self._locked = False
 
     @property
-    def pins(self):
-        """
-        dict: pins asssignment map
+    def pins(self) -> dict[str, int]:
+        """pins asssignment map
         """
         return self._pins
 
@@ -80,141 +67,103 @@ class SmartLock:
     def pins(self, value):
         if not isinstance(value, dict):
             raise TypeError("pins must be dict type.")
-
+        
+        # validate pin assignment
+        self._check_pin_overlap()
         self._pins = value
 
     @property
-    def PWM_LED_red(self):
-        """PWM instanse for red LED
+    def locked(self) -> bool:
+        """key's status
 
-        Returns
-        -------
-        GPIO PWM
-            instanse for GPIO PWM
-        """
-        return self._PWM_LED_red
-
-    @property
-    def PWM_LED_green(self):
-        """PWM instanse for green LED
-
-        Returns
-        -------
-        GPIO PWM
-            instanse for GPIO PWM
-        """
-        return self._PWM_LED_green
-
-    @property
-    def PWM_LED_switch(self):
-        """PWM instanse for switch LED
-
-        Returns
-        -------
-        GPIO PWM
-            instanse for GPIO PWM
-        """
-        return self._PWM_LED_switch
-
-    @property
-    def PWM_servo(self):
-        """PWM instanse for servomotor
-
-        Returns
-        -------
-        GPIO PWM
-            instanse for GPIO PWM
-        """
-        return self._PWM_servo
-
-    @property
-    def locked(self):
-        """key status
+        If true, the key is locked now, otherwise unlocked
 
         Returns
         -------
         bool
-            key's status (True:locked, False: unlocked)
+            key's status (True: locked, False: unlocked)
         """
         return self._locked
 
     @locked.setter
     def locked(self, value):
-        """key status
-
-        Parameters
-        ----------
-        value : bool
-            If true, the key is locked now, otherwise unlocked
-        """
         if not isinstance(value, bool):
+            logger.error("locked must be a bool value")
             raise TypeError("locked must be a bool value")
         self._locked = value
 
-    def lock(self):
-        """Excute Lock sequence
-        (LED Blinking -> buzzer sounded -> servomotor moving -> LED lighting)
+    def lock(self) -> None:
+        """Excute Locking sequence
+
+        The detail of the sequence is as follows:
+
+        1. Green LED off
+        2. Red LED Blinking
+        3. buzzer beeping (2 times)
+        4. servomotor moving
+        5. Red LED on
         """
-        self.PWM_LED_green.ChangeDutyCycle(0)  # switch green LED off
-        self.PWM_LED_red.ChangeDutyCycle(50)  # blink red LED (Duty ratio 50%)
-        self.buzzer(iteration=2, dt=0.1, interval=0.1)  # sound buzzer
+        # Green LED off
+        self.led_green.off()  # switch green LED off
+
+        # Red LED blinking
+        self.led_red.blink(on_time=0.125, off_time=0.125)  # blink red LED
+
+        # sound buzzer
+        self.buzzer.beep(on_time=0.1, off_time=0.05, n=2, background=True)
 
         # control servomotor
-        self.PWM_servo.ChangeDutyCycle(7.5)  # positioning
-        time.sleep(0.3)
+        self.servo.ChangeDutyCycle(7.5)  # positioning
+        sleep(0.5)
         self.PWM_servo.ChangeDutyCycle(2.5)  # rotate 90 deg
-        time.sleep(0.5)
+        sleep(0.5)
         self.PWM_servo.ChangeDutyCycle(7.5)  # rotate 0 deg
-        time.sleep(0.5)
-        self.PWM_servo.ChangeDutyCycle(0)  # down to 0 signal
+        sleep(0.5)
+        self.servo.value = None  # No signal sent
 
-        self.PWM_LED_red.start(100)  # switch red LED on
+        # Red LED on
+        self.led_red.on()  # switch red LED on
 
         # set lock status
         self.locked = True
 
-    def unlock(self):
-        """Excute unlock sequence
-        (LED Blinking -> buzzer sounded -> servomotor moving -> LED lighting)
+    def unlock(self) -> None:
+        """Excute unlocking sequence
+
+        The detail of the sequence is as follows:
+
+        1. Red LED off
+        2. Green LED Blinking
+        3. buzzer beep (3 times)
+        4. servomotor moving
+        5. Green LED on
         """
-        self.PWM_LED_red.ChangeDutyCycle(0)  # switch red LED off
-        self.PWM_LED_green.ChangeDutyCycle(50)  # blink green LED (Duty ratio 50%)
-        self.buzzer(iteration=3, dt=0.1, interval=0.05)  # sound buzzer
+        # Red LED off
+        self.led_red.off()  # switch red LED off
+
+        # Green LED blinking
+        self.led_green.blink(on_time=0.125, off_time=0.125)  # blink green LED
+
+        # sound buzzer
+        self.buzzer.beep(on_time=0.1, off_time=0.05, n=3, background=True)
 
         # control servomotor
         self.PWM_servo.ChangeDutyCycle(7.5)  # positioning
-        time.sleep(0.3)
+        sleep(0.5)
         self.PWM_servo.ChangeDutyCycle(12.5)  # rotate -90 deg
-        time.sleep(0.5)
+        sleep(0.5)
         self.PWM_servo.ChangeDutyCycle(7.5)  # rotate 0 deg
-        time.sleep(0.5)
-        self.PWM_servo.ChangeDutyCycle(0)  # down to 0 signal
+        sleep(0.5)
+        self.servo.value = None  # No signal sent
 
-        self.PWM_LED_green.start(100)  # switch green LED on
+        # Green LED on
+        self.led_green.on()  # switch green LED on
 
         # set lock status
         self.locked = False
 
-    def buzzer(self, iteration=3, dt=0.1, interval=0.05):
-        """sound buzzer repeatedly
-
-        Parameters
-        ----------
-        iteration : int
-            the number of buzzer cycles
-        dt : double
-            duration of beep [sec]
-        interval : double
-            beep interval [sec]
-        """
-        for n in range(iteration):
-            time.sleep(interval)
-            GPIO.output(self.pins["buzzer"], True)
-            time.sleep(dt)
-            GPIO.output(self.pins["buzzer"], False)
-
     def _check_pin_overlap(self):
-        """check if pin number overlapes with others
+        """check if pin assignment is overlaped
         """
         # pin numbers
         pin_numbers = [
@@ -223,13 +172,5 @@ class SmartLock:
 
         for pin in pin_numbers:
             if pin_numbers.count(pin) > 1:
-                raise Exception("detect overlaped pin assignment!")
-
-    def clean(self):
-        """clean PWM module and GPIO sequentially
-        """
-        self.PWM_LED_green.stop()
-        self.PWM_LED_red.stop()
-        self.PWM_LED_switch.stop()
-        self.PWM_servo.stop()
-        GPIO.cleanup()
+                logger.error("detect overlaped pin assignment!")
+                raise Exception
