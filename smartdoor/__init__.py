@@ -4,4 +4,6 @@ with Raspberry Pi.
 
 from .smartdoor import SmartDoor
 
+
+__version__ = "2.0.0.dev"
 __all__ = ["SmartDoor"]

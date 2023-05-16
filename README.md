@@ -1,14 +1,16 @@
- Smartdoor Repository
-=======================
+# Smartdoor client system
 
-smartdoor system API using a raspberry-Pi, NFC, LED, etc.
+[![GitHub](https://img.shields.io/github/license/munechika-koyo/cherab_phix)](https://opensource.org/licenses/BSD-3-Clause)
 
-## Prerequisite
-RPi.GPIO, nfcpy, requests, pyyaml
 
-## Smartdoor Host system
-NFC key management web application is developped [here](https://github.com/munechika-koyo/smartdoor_host)
+Smartdoor system including NFC card detecting, key locking/unlocking, turning LED on/off, etc. with Raspberry Pi.
 
-## Get started
-To get started, it required to specify your own configuration file like ``conf.yaml`` in ``demos``.
-Then, try to excute the ``AutoSequence.py`` in ``demos`` directory.
+## Quick Installation
+```bash
+$ git clone https://github.com/munechika-koyo/smartdoor.git
+$ cd smartdoor
+$ python -m pip install .
+```
+
+## Before getting started
+Smartdoor Host system which serves the web application for NFC key management must be run. It is developed [here](https://github.com/munechika-koyo/smartdoor_host).
