@@ -1,15 +1,15 @@
-"""This module provides IDm authentication functions communicating with database through web api.
-"""
+"""This module provides IDm authentication functions communicating with
+database through web api."""
+from logging import exception, getLogger
+
 from requests import Request, Session
 from requests.exceptions import ConnectionError
-from logging import getLogger
-
 
 logger = getLogger(__name__)
 
 
 class AuthIDm:
-    """Authentication for IDm using web api
+    """Authentication for IDm using web api.
 
     Parameters
     ----------
@@ -20,20 +20,23 @@ class AuthIDm:
     timeout
         session timeout to connect to the database, by default 10 sec
     """
-    def __init__(self, url: str, room: str, timeout: float = 10) -> None:
 
+    def __init__(self, url: str, room: str, timeout: float = 10) -> None:
         try:
             # get CSRF token in cookies
             session = Session()
             session.get(url, timeout=timeout, verify=False)
 
             # instantiate request object
-            headers = {"Content-type": "application/json", "X-CSRFToken": session.cookies["csrftoken"]}
+            headers = {
+                "Content-type": "application/json",
+                "X-CSRFToken": session.cookies["csrftoken"],
+            }
             req = Request("POST", url, headers=headers)
 
         except Exception as e:
-            logger.error(f"{type(e)}: {e}")
-            raise ConnectionError(f"cannot establish the connection to {url}")
+            exception(f"cannot establish the connection to {url}")
+            raise ConnectionError from e
 
         # save variables as properties
         self._session = session
@@ -42,24 +45,21 @@ class AuthIDm:
 
     @property
     def session(self) -> Session:
-        """session object
-        """
+        """Session object."""
         return self._session
 
     @property
     def request(self) -> Request:
-        """request object
-        """
+        """Request object."""
         return self._request
 
     @property
     def room(self) -> str:
-        """room name
-        """
+        """Room name."""
         return self._room
 
     def authenticate(self, idm: str, timeout: float = 5) -> str | None:
-        """IDm authentication method
+        """IDm authentication method.
 
         If the given idm is validated, returns user name which is registered in database.
         Otherwise returns None.
@@ -69,7 +69,7 @@ class AuthIDm:
         idm
             Hexadecimal IDm converted to string
         timeout
-            post requesting timeout to the database, by default 10 sec
+            post requesting timeout to the database, by default 5 sec
 
         Returns
         -------
@@ -98,8 +98,7 @@ class AuthIDm:
             return None
 
     def close(self):
-        """close session
-        """
+        """Close session."""
         logger.debug("close session")
         self._session.close()
 

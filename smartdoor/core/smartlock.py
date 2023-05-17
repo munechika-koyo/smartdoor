@@ -1,16 +1,17 @@
-"""Module for SmartLock class"""
-from time import sleep
-from gpiozero import LED, Buzzer, Button, Servo
-from gpiozero.pins.pigpio import PiGPIOFactory
+"""Module for SmartLock class."""
 from logging import getLogger
+from time import sleep
 
+from gpiozero import LED, Button, Buzzer, Servo
+from gpiozero.pins.pigpio import PiGPIOFactory
 
 logger = getLogger(__name__)
 factory = PiGPIOFactory()
 
 
 class SmartLock:
-    """This class is used to control raspberry Pi's GPIO devices (LEDs, Buzzer, servomotor, etc.).
+    """This class is used to control raspberry Pi's GPIO devices (LEDs, Buzzer,
+    servomotor, etc.).
 
     Parameters
     ----------
@@ -35,6 +36,7 @@ class SmartLock:
         excute unlock seaquence
         (LED blinking -> buzzer beeping -> servomotor moving -> LED lighting)
     """
+
     def __init__(self, pins: dict[str, int]) -> None:
         # validate pin assignment
         self.pins = pins
@@ -52,29 +54,34 @@ class SmartLock:
         self.buzzer = Buzzer(pins["buzzer"])
 
         # === Servo ===
-        self.servo = Servo(pins["servo"], initial_value=None, min_pulse_width=0.5e-3, max_pulse_width=2.4e-3, pin_factory=factory)
+        self.servo = Servo(
+            pins["servo"],
+            initial_value=None,
+            min_pulse_width=0.5e-3,
+            max_pulse_width=2.4e-3,
+            pin_factory=factory,
+        )
 
         # initialize locked property to avoid unexpected behavior
         self._locked = False
 
     @property
     def pins(self) -> dict[str, int]:
-        """pins asssignment map
-        """
+        """Pins asssignment map."""
         return self._pins
 
     @pins.setter
     def pins(self, value):
         if not isinstance(value, dict):
             raise TypeError("pins must be dict type.")
-        
+
         # validate pin assignment
         self._check_pin_overlap()
         self._pins = value
 
     @property
     def locked(self) -> bool:
-        """key's status
+        """Key's status.
 
         If true, the key is locked now, otherwise unlocked
 
@@ -88,12 +95,11 @@ class SmartLock:
     @locked.setter
     def locked(self, value):
         if not isinstance(value, bool):
-            logger.error("locked must be a bool value")
             raise TypeError("locked must be a bool value")
         self._locked = value
 
     def lock(self) -> None:
-        """Excute Locking sequence
+        """Excute Locking sequence.
 
         The detail of the sequence is as follows:
 
@@ -128,7 +134,7 @@ class SmartLock:
         self.locked = True
 
     def unlock(self) -> None:
-        """Excute unlocking sequence
+        """Excute unlocking sequence.
 
         The detail of the sequence is as follows:
 
@@ -163,14 +169,10 @@ class SmartLock:
         self.locked = False
 
     def _check_pin_overlap(self):
-        """check if pin assignment is overlaped
-        """
+        """Check if pin assignment is overlaped."""
         # pin numbers
-        pin_numbers = [
-            num for num in self.pins.values()
-        ]
+        pin_numbers = [num for num in self.pins.values()]
 
         for pin in pin_numbers:
             if pin_numbers.count(pin) > 1:
-                logger.error("detect overlaped pin assignment!")
-                raise Exception
+                raise Exception("detect overlaped pin assignment!")
