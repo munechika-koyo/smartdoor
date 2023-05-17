@@ -14,7 +14,7 @@ classifiers = [
     "Intended Audience :: End Users/Desktop",
     "License :: OSI Approved :: BSD License",
     "Natural Language :: English",
-    "Operating System :: POSIX :: Linux :: raspberrypi",
+    "Operating System :: POSIX :: Linux",
     "Programming Language :: Python :: 3.10",
     "Topic :: Home Automation",
     "Topic :: Security",
@@ -22,9 +22,9 @@ classifiers = [
 requires-python = ">=3.10"
 dependencies = [
     "requests",
-    "pyyaml",
     "nfcpy",
     "gpiozero",
+    'tomli; python_version < "3.11"',
 ]
 dynamic = ["version", "description"]
 
