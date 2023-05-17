@@ -15,14 +15,14 @@ class SmartLock:
     Parameters
     ----------
     pins
-        pin assignment key-value map
+        pin assignment key-value map. A pin number must be GPIO pin not BCM one.
 
         The following keys must be included:
 
-        - switch: input signal from switch
+        - button: input signal from push button switch
         - LED_red : output signal to red LED
         - LED_green : output signal to green LED
-        - LED_switch : output signal to switch LED
+        - LED_button : output signal to button switch LED
         - buzzer : output signal to buzzer
         - servo : output signal to servomotor
 
@@ -30,10 +30,10 @@ class SmartLock:
     -------
     lock()
         excute lock seaquence
-        (LED Blinking -> buzzer sounded -> servomotor moving -> LED lighting)
+        (LED blinking -> buzzer beeping -> servomotor moving -> LED lighting)
     unlock()
         excute unlock seaquence
-        (LED Blinking -> buzzer sounded -> servomotor moving -> LED lighting)
+        (LED blinking -> buzzer beeping -> servomotor moving -> LED lighting)
     """
     def __init__(self, pins: dict[str, int]) -> None:
         # validate pin assignment
@@ -43,16 +43,16 @@ class SmartLock:
         # === LED ===
         self.led_red = LED(pins["LED_red"])
         self.led_green = LED(pins["LED_green"])
-        self.led_switch = LED(pins["LED_switch"])
+        self.led_button = LED(pins["LED_button"])
 
         # === Push button switch ===
-        self.switch = Button(pins["switch"])
+        self.button = Button(pins["button"])
 
         # === Buzzer ===
         self.buzzer = Buzzer(pins["buzzer"])
 
         # === Servo ===
-        self.servo = Servo(pins["servo"], pin_factory=factory)
+        self.servo = Servo(pins["servo"], initial_value=None, min_pulse_width=0.5e-3, max_pulse_width=2.4e-3, pin_factory=factory)
 
         # initialize locked property to avoid unexpected behavior
         self._locked = False
@@ -99,30 +99,30 @@ class SmartLock:
 
         1. Green LED off
         2. Red LED Blinking
-        3. buzzer beeping (2 times)
-        4. servomotor moving
+        3. Buzzer beeping (2 times)
+        4. Servomotor moving
         5. Red LED on
         """
+        logger.debug("locking sequence started")
+
         # Green LED off
-        self.led_green.off()  # switch green LED off
+        self.led_green.off()
 
         # Red LED blinking
-        self.led_red.blink(on_time=0.125, off_time=0.125)  # blink red LED
+        self.led_red.blink(on_time=0.2, off_time=0.2)
 
         # sound buzzer
-        self.buzzer.beep(on_time=0.1, off_time=0.05, n=2, background=True)
+        self.buzzer.beep(on_time=0.1, off_time=0.05, n=2)
 
         # control servomotor
-        self.servo.ChangeDutyCycle(7.5)  # positioning
+        self.servo.min()
         sleep(0.5)
-        self.PWM_servo.ChangeDutyCycle(2.5)  # rotate 90 deg
+        self.servo.mid()
         sleep(0.5)
-        self.PWM_servo.ChangeDutyCycle(7.5)  # rotate 0 deg
-        sleep(0.5)
-        self.servo.value = None  # No signal sent
+        self.servo.detach()  # No signal sent
 
         # Red LED on
-        self.led_red.on()  # switch red LED on
+        self.led_red.on()
 
         # set lock status
         self.locked = True
@@ -134,30 +134,30 @@ class SmartLock:
 
         1. Red LED off
         2. Green LED Blinking
-        3. buzzer beep (3 times)
-        4. servomotor moving
+        3. Buzzer beep (3 times)
+        4. Servomotor moving
         5. Green LED on
         """
+        logger.debug("unlocking sequence started")
+
         # Red LED off
-        self.led_red.off()  # switch red LED off
+        self.led_red.off()
 
         # Green LED blinking
-        self.led_green.blink(on_time=0.125, off_time=0.125)  # blink green LED
+        self.led_green.blink(on_time=0.2, off_time=0.2)
 
         # sound buzzer
-        self.buzzer.beep(on_time=0.1, off_time=0.05, n=3, background=True)
+        self.buzzer.beep(on_time=0.1, off_time=0.05, n=3)
 
         # control servomotor
-        self.PWM_servo.ChangeDutyCycle(7.5)  # positioning
+        self.servo.max()
         sleep(0.5)
-        self.PWM_servo.ChangeDutyCycle(12.5)  # rotate -90 deg
+        self.servo.mid()
         sleep(0.5)
-        self.PWM_servo.ChangeDutyCycle(7.5)  # rotate 0 deg
-        sleep(0.5)
-        self.servo.value = None  # No signal sent
+        self.servo.detach()  # No signal sent
 
         # Green LED on
-        self.led_green.on()  # switch green LED on
+        self.led_green.on()
 
         # set lock status
         self.locked = False
