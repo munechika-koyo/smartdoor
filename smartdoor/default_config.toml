@@ -1,0 +1,48 @@
+# Smartdoor Default Configuration File
+# ======================================
+# This file is used to set default configuration of smartdoor system.
+# The user-specific configuration should be written in ~/.config/smartdoor.toml file which is
+# automatically loaded after this file and overrides the default configuration.
+#
+# -------------------------------------------------------------------
+# Smartdoor host authentication URL.
+# - Note:
+#   Smartdoor host deploys website where NFC keys can be registered,
+#   manages stored keys data, and provides authentication API.
+#   (see https://github.com/munechika-koyo/smartdoor_host)
+#   Here, the URL of the authentication API is set.
+# -------------------------------------------------------------------
+auth_url = "https://smartdoor/authenticate/"
+
+# -------------------------------------------------------------------
+# Room Name where smartdoor client system is implemeted.
+# - Note:
+#   smartdoor host must have the Allow_"room" attribute (e.g. Allow_N2_423)
+# -------------------------------------------------------------------
+room = "423"
+
+# -------------------------------------------------------------------
+# Pin Assignment
+# - Note:
+#   Rasberry-pi's GPIO pin must be the number of PIN, not GPIO number.
+# -------------------------------------------------------------------
+[pins]
+button = 10  # input from push button
+LED_red = 5   # output to red LED
+LED_green = 7  # output to green LED
+LED_button = 13  # output to push button LED
+buzzer = 11  # output to buzzer
+servo = 3  # output to servomotor
+
+
+# -------------------------------------------------------------------
+# IFTTT POST URLs
+# - Note:
+#   Post values to IFTTT Webhooks to trigger events are
+#   "value1": "date"  # (e.g. "2021/06/21 12:00:00")
+#   "value2": "username"  # (e.g. "unknown")
+#   "value3": "action"  # (e.g. "LOCK")
+# -------------------------------------------------------------------
+[IFTTT_URLs]
+url1 = "https://maker.ifttt.com/trigger/{event1}/with/key/{your_key}"
+url2 = "https://maker.ifttt.com/trigger/{event2}/with/key/{your_key}"
