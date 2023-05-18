@@ -1,6 +1,5 @@
-"""This module provides IDm authentication functions communicating with
-database through web api."""
-from logging import exception, getLogger
+"""This module provides IDm authentication functions communicating with database through web api."""
+from logging import getLogger
 
 from requests import Request, Session
 from requests.exceptions import ConnectionError
@@ -35,7 +34,7 @@ class AuthIDm:
             req = Request("POST", url, headers=headers)
 
         except Exception as e:
-            exception(f"cannot establish the connection to {url}")
+            logger.exception(f"cannot establish the connection to {url}")
             raise ConnectionError from e
 
         # save variables as properties

@@ -10,8 +10,7 @@ factory = PiGPIOFactory()
 
 
 class SmartLock:
-    """This class is used to control raspberry Pi's GPIO devices (LEDs, Buzzer,
-    servomotor, etc.).
+    """This class is used to control raspberry Pi's GPIO devices (LEDs, Buzzer, servomotor, etc.).
 
     Parameters
     ----------

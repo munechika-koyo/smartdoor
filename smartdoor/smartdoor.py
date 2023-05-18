@@ -1,12 +1,15 @@
+"""This module provides a main class of SmartDoor system."""
 from binascii import hexlify
 from collections import deque
 from datetime import datetime
-from logging import exception, getLogger
+from logging import getLogger
 from pathlib import Path
 
 import requests
 from nfc import ContactlessFrontend
 from nfc.tag import Tag
+from urllib3 import disable_warnings
+from urllib3.exceptions import InsecureRequestWarning
 
 try:
     import tomllib
@@ -15,6 +18,10 @@ except ImportError:
 
 from .core import AuthIDm, SmartLock
 
+# set invisible of https secure warning
+disable_warnings(InsecureRequestWarning)
+
+# set logger
 logger = getLogger(__name__)
 
 
@@ -185,7 +192,7 @@ class SmartDoor(SmartLock):
             logger.info("IFTTT post is completed.")
 
         except Exception:
-            exception("IFTTT post is failed.")
+            logger.exception("IFTTT post is failed.")
             self._post_queue.appendleft(data)
 
     def door_sequence(self, user: str = "test") -> None:
@@ -239,4 +246,4 @@ class SmartDoor(SmartLock):
             self._auth.close()  # close authentication session
             logger.info("smartdoor system is closed.")
         except Exception:
-            exception("failed to close smartdoor system.")
+            logger.exception("failed to close smartdoor system.")
