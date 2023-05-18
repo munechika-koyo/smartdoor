@@ -15,7 +15,7 @@ classifiers = [
     "License :: OSI Approved :: BSD License",
     "Natural Language :: English",
     "Operating System :: POSIX :: Linux",
-    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3",
     "Topic :: Home Automation",
     "Topic :: Security",
 ]
@@ -63,3 +63,9 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
 # Assume Python 3.10
 target-version = "py310"
+
+[tool.docformatter]
+style = "numpy"
+recursive = true
+wrap-summaries = 100
+wrap-descriptions = 100
