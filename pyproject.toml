@@ -31,6 +31,7 @@ dynamic = ["version", "description"]
 
 [project.optional-dependencies]
 dev = [
+    "flit",
     "pytest",
     "black",
     "ruff",
@@ -42,7 +43,10 @@ dev = [
 Home = "https://github.com/munechika-koyo/smartdoor"
 
 [project.scripts]
-smartdoor = "smartdoor:main_cli"
+smartdoor = "smartdoor:cli"
+
+[tool.flit.sdist]
+exclude = ["doc/", "serviceConfig/"]
 
 [tool.black]
 line-length = 100
