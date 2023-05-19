@@ -92,7 +92,11 @@ def start(locked: bool):
 @cli.command()
 @click.option("--debug", "-d", is_flag=True, help="show debug log")
 def show_log(debug: bool):
-    """Show log file if it exists at `~/smartdoor.log` or `~/smartdoor_debug.log`."""
+    """Show logs of SmartDoor system.
+
+    logs are stored in `~/smartdoor.log` or `~/smartdoor_debug.log`. If you want to show debug log,
+    use `--debug` option.
+    """
     log = Path().home() / "smartdoor.log" if not debug else Path().home() / "smartdoor_debug.log"
 
     if log.exists():
