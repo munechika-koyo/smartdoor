@@ -56,7 +56,7 @@ line-length = 100
 
 # Enable Pyflakes `E` and `F` codes by default.
 select = ["E", "F", "W", "I", "N", "B", "NPY"]
-ignore = ["E501", "N806"]
+ignore = ["E501", "N806", "E402"]
 
 # Allow autofix for all enabled rules (when `--fix`) is provided.
 fixable = ["E", "F", "W", "I", "B", "NPY"]

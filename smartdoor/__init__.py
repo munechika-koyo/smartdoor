@@ -11,6 +11,10 @@ from pprint import pformat
 
 import rich_click as click
 
+# Set logger
+log_config.fileConfig(Path(__file__).parent / "logging.conf")
+logger = getLogger("main")
+
 try:
     import tomllib
 except ImportError:
@@ -19,27 +23,29 @@ except ImportError:
 from .smartdoor import SmartDoor
 
 __version__ = "2.0.0.dev0"
-__all__ = ["SmartDoor", "main_cli"]
+__all__ = ["SmartDoor"]
 
 
-@click.group()
+@click.group(context_settings=dict(help_option_names=["-h", "--help"]))
+@click.version_option(__version__, "-V", "--version")
 def cli():
     """Smartdoor system CLI."""
     pass
 
 
-@cli.command(help="Start SmartDoor system.")
-@click.option("--locked", default=True, show_default=True, help="Set initial key status")
+@cli.command()
+@click.option(
+    "--locked/--unlocked", default=True, show_default=True, help="Set initial key status."
+)
 def start(locked: bool):
     """Start SmartDoor system.
 
+    The initial key status can be set by `--locked` or `--unlocked` option, by default `--locked`.
+
     If you want to stop this system, press Ctrl+C.
     """
-    # Set logger
-    log_config.fileConfig(Path(__file__).parent / "logging.conf")
-    logger = getLogger("main")
-
     # Instantiate SmartDoor
+    logger.info("start smartdoor system")
     door = SmartDoor()
 
     # Set initial key status
@@ -76,7 +82,7 @@ def start(locked: bool):
         door.close()
 
 
-@cli.command(help="Show log file")
+@cli.command()
 @click.option("--debug", "-d", is_flag=True, help="show debug log")
 def show_log(debug: bool):
     """Show log file if it exists at `~/smartdoor.log` or `~/smartdoor_debug.log`."""
@@ -88,7 +94,7 @@ def show_log(debug: bool):
         click.echo("log file not found.")
 
 
-@cli.command(help="Show configuation")
+@cli.command()
 def show_config():
     """Show configuation in key-value format.
 
@@ -108,5 +114,5 @@ def show_config():
     click.echo(pformat(config))
 
 
-def main_cli():
+if __name__ == "__main__":
     cli()
