@@ -50,7 +50,7 @@ class SmartDoor(SmartLock):
         # IFTTT
         self._urls: dict[str, str] = {}
         self.urls = config["IFTTT_URLs"]
-        self._post_queue = deque()
+        self._post_queue: deque = deque()
 
         # IDm authentication class
         self._auth = AuthIDm(config["auth_url"], config["room"])

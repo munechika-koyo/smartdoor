@@ -2,11 +2,18 @@
 from logging import getLogger
 from time import sleep
 
-from gpiozero import LED, Button, Buzzer, Servo
-from gpiozero.pins.pigpio import PiGPIOFactory
+from gpiozero import LED, Button, Buzzer, Device, Servo
 
 logger = getLogger(__name__)
-factory = PiGPIOFactory()
+
+try:
+    from gpiozero.pins.pigpio import PiGPIOFactory
+
+    Device.pin_factory = PiGPIOFactory()
+    logger.debug("using pigpio pin factory")
+
+except ModuleNotFoundError:
+    logger.debug("using defalut pin factory")
 
 
 class SmartLock:
@@ -58,7 +65,6 @@ class SmartLock:
             initial_value=None,
             min_pulse_width=0.5e-3,
             max_pulse_width=2.4e-3,
-            pin_factory=factory,
         )
 
         # initialize locked property to avoid unexpected behavior
