@@ -1,8 +1,8 @@
 """This module provides IDm authentication functions communicating with database through web api."""
+import sys
 from logging import getLogger
 
 from requests import Request, Session
-from requests.exceptions import ConnectionError
 
 logger = getLogger(__name__)
 
@@ -34,8 +34,9 @@ class AuthIDm:
             req = Request("POST", url, headers=headers)
 
         except Exception as e:
-            logger.exception(f"cannot establish the connection to {url}")
-            raise ConnectionError from e
+            logger.error(f"cannot establish the connection to {url}")
+            logger.debug(f"{type(e)}: {e}")
+            sys.exit(1)
 
         # save variables as properties
         self._session = session
