@@ -6,15 +6,6 @@ from gpiozero import LED, Button, Buzzer, Device, Servo
 
 logger = getLogger(__name__)
 
-try:
-    from gpiozero.pins.pigpio import PiGPIOFactory
-
-    Device.pin_factory = PiGPIOFactory()
-    logger.debug("using pigpio pin factory")
-
-except ModuleNotFoundError:
-    logger.debug("using defalut pin factory")
-
 
 class SmartLock:
     """This class is used to control raspberry Pi's GPIO devices (LEDs, Buzzer, servomotor, etc.).
@@ -44,6 +35,16 @@ class SmartLock:
     """
 
     def __init__(self, pins: dict[str, int]) -> None:
+        # set pin factory
+        try:
+            from gpiozero.pins.pigpio import PiGPIOFactory
+
+            Device.pin_factory = PiGPIOFactory()
+            logger.debug("using pigpio pin factory")
+
+        except ModuleNotFoundError:
+            logger.debug("using defalut pin factory")
+
         # validate pin assignment
         self.pins = pins
 
@@ -76,13 +77,13 @@ class SmartLock:
         return self._pins
 
     @pins.setter
-    def pins(self, value):
-        if not isinstance(value, dict):
+    def pins(self, maps):
+        if not isinstance(maps, dict):
             raise TypeError("pins must be dict type.")
 
         # validate pin assignment
-        self._check_pin_overlap()
-        self._pins = value
+        self._check_pin_overlap(maps)
+        self._pins = maps
 
     @property
     def locked(self) -> bool:
@@ -173,10 +174,10 @@ class SmartLock:
         # set lock status
         self.locked = False
 
-    def _check_pin_overlap(self):
+    def _check_pin_overlap(self, maps: dict[str, int]):
         """Check if pin assignment is overlaped."""
         # pin numbers
-        pin_numbers = [num for num in self.pins.values()]
+        pin_numbers = [num for num in maps.values()]
 
         for pin in pin_numbers:
             if pin_numbers.count(pin) > 1:
