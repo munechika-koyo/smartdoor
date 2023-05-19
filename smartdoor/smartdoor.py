@@ -4,6 +4,7 @@ from collections import deque
 from datetime import datetime
 from logging import getLogger
 from pathlib import Path
+from time import sleep
 
 import requests
 from nfc import ContactlessFrontend
@@ -21,8 +22,7 @@ from .core import AuthIDm, SmartLock
 # set invisible of https secure warning
 disable_warnings(InsecureRequestWarning)
 
-# set logger
-logger = getLogger(__name__)
+module_logger = getLogger(__name__)
 
 
 class SmartDoor(SmartLock):
@@ -34,6 +34,9 @@ class SmartDoor(SmartLock):
     The user-specific configuration file (`~/.config/smartdoor.toml`) is loaded automatically.
     """
 
+    # define class logger
+    logger = getLogger("main").getChild("SmartDoor")
+
     def __init__(self) -> None:
         # Load default configuration file
         with open(Path(__file__).parent / "default_config.toml", "rb") as file:
@@ -44,7 +47,7 @@ class SmartDoor(SmartLock):
         if config_path.exists():
             with open(config_path, "rb") as file:
                 config.update(tomllib.load(file))
-                logger.debug(f"Loaded user-specific configuration file: {config_path}")
+                self.logger.debug(f"Loaded user-specific configuration file: {config_path}")
 
         # === Initialization ==================================================
         # IFTTT
@@ -143,7 +146,7 @@ class SmartDoor(SmartLock):
         # extract idm
         idm = hexlify(tag.idm).decode("utf-8")
 
-        logger.debug(f"idm: {idm} is detected.")
+        self.logger.debug(f"idm: {idm} is detected.")
 
         # authentication
         name = self._auth.authenticate(idm)
@@ -183,16 +186,18 @@ class SmartDoor(SmartLock):
                     res = requests.post(url, json=data, timeout=(3.0, 7.5))
 
                     if res.status_code == 200:
-                        logger.debug(f"IFTTT post is completed: {event}")
+                        self.logger.debug(f"IFTTT post is completed: {event}")
                     else:
-                        logger.error(f"IFTTT post is failed (code: {res.status_code}): {event}")
+                        self.logger.error(
+                            f"IFTTT post is failed (code: {res.status_code}): {event}"
+                        )
                         self._post_queue.appendleft(data)
                         break
 
-            logger.info("IFTTT post is completed.")
+            self.logger.info("IFTTT post is completed.")
 
         except Exception:
-            logger.exception("IFTTT post is failed.")
+            self.logger.exception("IFTTT post is failed.")
             self._post_queue.appendleft(data)
 
     def door_sequence(self, user: str = "test") -> None:
@@ -210,11 +215,11 @@ class SmartDoor(SmartLock):
         if self.locked:
             self.unlock()
             action = "UNLOCK"
-            logger.info(f"unlocked by {user}")
+            self.logger.info(f"unlocked by {user}")
         else:
             self.lock()
             action = "LOCK"
-            logger.info(f"locked by {user}")
+            self.logger.info(f"locked by {user}")
 
         # post to IFTTT
         self.post_ifttt(user=user, action=action)
@@ -227,7 +232,7 @@ class SmartDoor(SmartLock):
         self.buzzer.beep(iteration=2, dt=0.5, interval=0.1)
 
         # log
-        logger.info("unauthorized user touched the reader")
+        self.logger.info("unauthorized user touched the reader")
 
         # post to IFTTT
         self.post_ifttt(user="unauthorized user", action="INVALID TOUCH")
@@ -239,11 +244,37 @@ class SmartDoor(SmartLock):
             self.led_red.off()
             self.led_green.on()
 
+    def error_sequence(self, duration: float = 2) -> None:
+        """Error sequence when an program error occurred.
+
+        The sequence is as follows:
+        - Blink all LED
+        - Sound buzzer for `duration` seconds
+        - After that, turn off all LED and buzzer
+
+        Parameters
+        ----------
+        duration
+            duration of the error sequence, by default 2 sec
+        """
+        # Blink all LED
+        self.led_red.blink(on_time=0.1, off_time=0.1)
+        self.led_green.blink(on_time=0.1, off_time=0.1)
+
+        # sound buzzer
+        self.buzzer.on()
+        sleep(duration)
+
+        # Off all LED and buzzer
+        self.buzzer.off()
+        self.led_red.off()
+        self.led_green.off()
+
     def close(self) -> None:
         """Close the smartdoor system."""
         try:
             self.clf.close()  # close nfc contactlessfrontend instance
             self._auth.close()  # close authentication session
-            logger.info("smartdoor system is closed.")
+            self.logger.info("smartdoor system is closed.")
         except Exception:
-            logger.exception("failed to close smartdoor system.")
+            self.logger.exception("failed to close smartdoor system.")

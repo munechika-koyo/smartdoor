@@ -4,7 +4,7 @@ from time import sleep
 
 from gpiozero import LED, Button, Buzzer, Device, Servo
 
-logger = getLogger(__name__)
+module_logger = getLogger(__name__)
 
 
 class SmartLock:
@@ -34,16 +34,19 @@ class SmartLock:
         (LED blinking -> buzzer beeping -> servomotor moving -> LED lighting)
     """
 
+    # define class logger
+    logger = getLogger("main").getChild("SmartLock")
+
     def __init__(self, pins: dict[str, int]) -> None:
         # set pin factory
         try:
             from gpiozero.pins.pigpio import PiGPIOFactory
 
             Device.pin_factory = PiGPIOFactory()
-            logger.debug("using pigpio pin factory")
+            self.logger.debug("using pigpio pin factory")
 
         except ModuleNotFoundError:
-            logger.debug("using defalut pin factory")
+            self.logger.debug("using defalut pin factory")
 
         # validate pin assignment
         self.pins = pins
@@ -115,7 +118,7 @@ class SmartLock:
         4. Servomotor moving
         5. Red LED on
         """
-        logger.debug("locking sequence started")
+        self.logger.debug("locking sequence started")
 
         # Green LED off
         self.led_green.off()
@@ -150,7 +153,7 @@ class SmartLock:
         4. Servomotor moving
         5. Green LED on
         """
-        logger.debug("unlocking sequence started")
+        self.logger.debug("unlocking sequence started")
 
         # Red LED off
         self.led_red.off()

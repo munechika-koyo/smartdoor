@@ -11,7 +11,7 @@ from pprint import pformat
 
 import rich_click as click
 
-# Set logger
+# Define logger before importing SmartDoor class to follow the same configuration
 log_config.fileConfig(Path(__file__).parent / "logging.conf")
 logger = getLogger("main")
 
@@ -78,6 +78,13 @@ def start(locked: bool):
             # If tag == False (KeyboardInterrupt)
             else:
                 raise KeyboardInterrupt
+    except KeyboardInterrupt:
+        logger.info("Smartdoor system stopped by user")
+
+    except Exception:
+        logger.exception("unexpected error occurred")
+        door.error_sequence()
+
     finally:
         door.close()
 

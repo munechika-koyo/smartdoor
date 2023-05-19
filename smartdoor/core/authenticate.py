@@ -4,7 +4,7 @@ from logging import getLogger
 
 from requests import Request, Session
 
-logger = getLogger(__name__)
+module_logger = getLogger(__name__)
 
 
 class AuthIDm:
@@ -20,6 +20,8 @@ class AuthIDm:
         session timeout to connect to the database, by default 10 sec
     """
 
+    logger = getLogger("main").getChild("AuthIDm")
+
     def __init__(self, url: str, room: str, timeout: float = 10) -> None:
         try:
             # get CSRF token in cookies
@@ -34,8 +36,8 @@ class AuthIDm:
             req = Request("POST", url, headers=headers)
 
         except Exception as e:
-            logger.error(f"cannot establish the connection to {url}")
-            logger.debug(f"{type(e)}: {e}")
+            self.logger.error(f"cannot establish the connection to {url}")
+            self.logger.debug(f"{type(e)}: {e}")
             sys.exit(1)
 
         # save variables as properties
@@ -77,7 +79,7 @@ class AuthIDm:
             username which is registered in database, if not, retuning None.
         """
         if not isinstance(idm, str):
-            logger.error("idm must be string containing 16 hexadecimal digits.")
+            self.logger.error("idm must be string containing 16 hexadecimal digits.")
             return None
 
         self._request.json = {"idm": idm}
@@ -94,12 +96,12 @@ class AuthIDm:
             return None
 
         except Exception as e:
-            logger.error(f"{type(e)}: {e}")
+            self.logger.error(f"{type(e)}: {e}")
             return None
 
     def close(self):
         """Close session."""
-        logger.debug("close session")
+        self.logger.debug("close session")
         self._session.close()
 
 
