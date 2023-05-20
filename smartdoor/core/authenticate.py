@@ -1,4 +1,6 @@
 """This module provides IDm authentication functions communicating with database through web api."""
+from __future__ import annotations
+
 import sys
 from logging import getLogger
 

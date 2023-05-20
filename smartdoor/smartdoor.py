@@ -1,4 +1,6 @@
 """This module provides a main class of SmartDoor system."""
+from __future__ import annotations
+
 from binascii import hexlify
 from collections import deque
 from datetime import datetime

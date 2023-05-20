@@ -4,6 +4,8 @@ This system is designed to be used with Raspberry Pi.
 
 Some CLIs including main sequence is implemented here.
 """
+from __future__ import annotations
+
 from logging import config as log_config
 from logging import getLogger
 from pathlib import Path
