@@ -24,15 +24,17 @@ room = "423"
 # -------------------------------------------------------------------
 # Pin Assignment
 # - Note:
-#   Rasberry-pi's GPIO pin must be the number of PIN, not GPIO number.
+#   smartdoor uses Broadcom (BCM) pin numbering for the GPIO pins.
+#   For example, if you use a "GPIO2" as an button input pin,
+#   you should set "button = 2" in the [pins] section.
 # -------------------------------------------------------------------
 [pins]
-button = 10  # input from push button
-LED_red = 5   # output to red LED
-LED_green = 7  # output to green LED
-LED_button = 13  # output to push button LED
-buzzer = 11  # output to buzzer
-servo = 3  # output to servomotor
+button = 25  # input from push button
+LED_red = 17   # output to red LED
+LED_green = 27  # output to green LED
+LED_button = 24  # output to push button LED
+buzzer = 5  # output to buzzer
+servo = 12  # output to servomotor
 
 
 # -------------------------------------------------------------------
