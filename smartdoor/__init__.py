@@ -6,6 +6,7 @@ Some CLIs including main sequence is implemented here.
 """
 from __future__ import annotations
 
+import subprocess
 from logging import config as log_config
 from logging import getLogger
 from pathlib import Path
@@ -24,7 +25,7 @@ except ImportError:
 
 from .smartdoor import SmartDoor
 
-__version__ = "2.0.0.dev0"
+__version__ = "2.0.0.dev1"
 __all__ = ["SmartDoor"]
 
 
@@ -42,7 +43,8 @@ def cli():
 def start(locked: bool):
     """Start SmartDoor system.
 
-    The initial key status can be set by `--locked` or `--unlocked` option, by default `--locked`.
+    The infinite loop workflow is executed at foreground. The initial key status can be set by
+    `--locked` or `--unlocked` option, by default `--locked`.
 
     If you want to stop this system, press Ctrl+C.
     """
@@ -108,23 +110,76 @@ def show_log(debug: bool):
 
 
 @cli.command()
-def show_config():
-    """Show configuation in key-value format.
+@click.option("--show", is_flag=True, help="show current configuration parameters")
+@click.option(
+    "--generate", is_flag=True, help="generate default config file as ~/.config/smartdoor.toml"
+)
+def config(show: bool, generate: bool):
+    """Configuration tool for SmartDoor system.
 
-    If user-specific config exists at `~/.config/smartdoor.toml`, overrided one is shown.
+    If you want to configure smartdoor system, edit `~/.config/smartdoor.toml` directly, after
+    generating default config file by `--generate` option.
     """
     # Load default configuration file
-    with open(Path(__file__).parent / "default_config.toml", "rb") as file:
+    default_config_path = Path(__file__).parent / "default_config.toml"
+    with default_config_path.open("rb") as file:
         config = tomllib.load(file)
 
     # Load user-specific configuration file if exists
     config_path = Path.home() / ".config" / "smartdoor.toml"
     if config_path.exists():
-        with open(config_path, "rb") as file:
+        with config_path.open("rb") as file:
             config.update(tomllib.load(file))
 
+    # If config file not found and `--generate` option is specified, generate default config file
+    if generate and not config_path.exists():
+        config_path.parent.mkdir(parents=True, exist_ok=True)
+        with config_path.open("w") as file:
+            file.write(default_config_path.read_text())
+        click.echo(f"generated default config file as {config_path}")
+
     # Show configuation
-    click.echo(pformat(config))
+    elif show:
+        click.echo(pformat(config))
+    else:
+        click.echo("please specify `--show` or `--generate` option")
+
+
+@cli.command()
+@click.option("--register", is_flag=True, help="register service to systemd and start it")
+@click.option("--unregister", is_flag=True, help="unregister service from systemd")
+@click.option("--start", is_flag=True, help="start service")
+@click.option("--stop", is_flag=True, help="stop service")
+def service(register: bool, unregister: bool, start: bool, stop: bool):
+    """Systemd Service tool for SmartDoor system.
+
+    If you want to register/unregister smartdoor system to/from systemd, use `--register` or
+    `--unregister` option. If choose `--register` option, smartdoor system will be started.
+    """
+    if register:
+        service_file = Path(__file__).parent / "smartdoor.service"
+        subprocess.run(
+            ["sudo", "ln", "-s", str(service_file), "/etc/systemd/system/smartdoor.service"]
+        )
+        subprocess.run(["sudo", "systemctl", "daemon-reload"])
+        subprocess.run(["sudo", "systemctl", "enable", "smartdoor.service"])
+        click.echo("registered service to systemd")
+
+    elif unregister:
+        subprocess.run(["sudo", "systemctl", "stop", "smartdoor.service"])
+        subprocess.run(["sudo", "systemctl", "disable", "smartdoor.service"])
+        click.echo("unregistered service from systemd")
+
+    elif start:
+        subprocess.run(["sudo", "systemctl", "start", "smartdoor.service"])
+        click.echo("started service")
+
+    elif stop:
+        subprocess.run(["sudo", "systemctl", "stop", "smartdoor.service"])
+        click.echo("stopped service")
+
+    else:
+        click.echo("please specify `--register` or `--unregister` option")
 
 
 if __name__ == "__main__":
