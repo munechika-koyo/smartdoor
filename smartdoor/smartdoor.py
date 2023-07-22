@@ -47,7 +47,7 @@ class SmartDoor(SmartLock):
         # Load user-specific configuration file if exists
         config_path = Path.home() / ".config" / "smartdoor.toml"
         if config_path.exists():
-            with open(config_path, "rb") as file:
+            with config_path.open("rb") as file:
                 config.update(tomllib.load(file))
                 self.logger.debug(f"Loaded user-specific configuration file: {config_path}")
 
