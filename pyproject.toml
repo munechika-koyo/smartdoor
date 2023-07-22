@@ -48,7 +48,7 @@ Home = "https://github.com/munechika-koyo/smartdoor"
 smartdoor = "smartdoor:cli"
 
 [tool.flit.sdist]
-exclude = ["doc/", "serviceConfig/"]
+exclude = ["doc/"]
 
 [tool.black]
 line-length = 100
