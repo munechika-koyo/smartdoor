@@ -25,7 +25,7 @@ except ImportError:
 
 from .smartdoor import SmartDoor
 
-__version__ = "2.0.0.dev1"
+__version__ = "2.0.0.dev2"
 __all__ = ["SmartDoor"]
 
 
@@ -142,44 +142,84 @@ def config(show: bool, generate: bool):
     elif show:
         click.echo(pformat(config))
     else:
-        click.echo("please specify `--show` or `--generate` option")
+        click.echo(click.get_current_context().get_help())
 
 
 @cli.command()
-@click.option("--register", is_flag=True, help="register service to systemd and start it")
+@click.option("--register", is_flag=True, help="register service to systemd")
 @click.option("--unregister", is_flag=True, help="unregister service from systemd")
 @click.option("--start", is_flag=True, help="start service")
 @click.option("--stop", is_flag=True, help="stop service")
-def service(register: bool, unregister: bool, start: bool, stop: bool):
+@click.option("--restart", is_flag=True, help="restart service")
+@click.option("--status", is_flag=True, help="show service status")
+def service(register: bool, unregister: bool, start: bool, stop: bool, restart: bool, status: bool):
     """Systemd Service tool for SmartDoor system.
 
     If you want to register/unregister smartdoor system to/from systemd, use `--register` or
-    `--unregister` option. If choose `--register` option, smartdoor system will be started.
+    `--unregister` option. If choosing `--register` option, smartdoor system will be ready for start
+    automatically.
+
+    You can also start/stop/restart service by `--start`, `--stop`, `--restart` option. If you want
+    to show service status, use `--status` option.
     """
     if register:
-        service_file = Path(__file__).parent / "smartdoor.service"
-        subprocess.run(
-            ["sudo", "ln", "-s", str(service_file), "/etc/systemd/system/smartdoor.service"]
-        )
-        subprocess.run(["sudo", "systemctl", "daemon-reload"])
-        subprocess.run(["sudo", "systemctl", "enable", "smartdoor.service"])
-        click.echo("registered service to systemd")
+        try:
+            service_file = Path(__file__).parent / "smartdoor.service"
+            subprocess.run(
+                ["sudo", "ln", "-s", str(service_file), "/etc/systemd/system/smartdoor.service"],
+                check=True,
+            )
+            subprocess.run(["sudo", "systemctl", "daemon-reload"], check=True)
+            subprocess.run(["sudo", "systemctl", "enable", "smartdoor.service"], check=True)
+            click.echo("registered service to systemd")
+        except subprocess.CalledProcessError as e:
+            click.echo(e)
+            click.echo("failed to register service to systemd")
 
     elif unregister:
-        subprocess.run(["sudo", "systemctl", "stop", "smartdoor.service"])
-        subprocess.run(["sudo", "systemctl", "disable", "smartdoor.service"])
-        click.echo("unregistered service from systemd")
+        try:
+            subprocess.run(["sudo", "systemctl", "stop", "smartdoor.service"], check=True)
+            subprocess.run(["sudo", "systemctl", "disable", "smartdoor.service"], check=True)
+            subprocess.run(["sudo", "rm", "/etc/systemd/system/smartdoor.service"], check=True)
+            subprocess.run(["sudo", "systemctl", "daemon-reload"], check=True)
+            click.echo("unregistered service from systemd")
+        except subprocess.CalledProcessError as e:
+            click.echo(e)
+            click.echo("failed to unregister service from systemd")
 
     elif start:
-        subprocess.run(["sudo", "systemctl", "start", "smartdoor.service"])
-        click.echo("started service")
+        try:
+            subprocess.run(["sudo", "systemctl", "start", "smartdoor.service"], check=True)
+            click.echo("started service")
+        except subprocess.CalledProcessError as e:
+            click.echo(e)
+            click.echo("failed to start service")
 
     elif stop:
-        subprocess.run(["sudo", "systemctl", "stop", "smartdoor.service"])
-        click.echo("stopped service")
+        try:
+            subprocess.run(["sudo", "systemctl", "stop", "smartdoor.service"], check=True)
+            click.echo("stopped service")
+        except subprocess.CalledProcessError as e:
+            click.echo(e)
+            click.echo("failed to stop service")
+
+    elif restart:
+        try:
+            subprocess.run(["sudo", "systemctl", "restart", "smartdoor.service"], check=True)
+            click.echo("restarted service")
+        except subprocess.CalledProcessError as e:
+            click.echo(e)
+            click.echo("failed to restart service")
+
+    elif status:
+        try:
+            subprocess.run(["sudo", "systemctl", "status", "smartdoor.service"], check=True)
+        except subprocess.CalledProcessError as e:
+            click.echo(e)
+            click.echo("failed to show service status")
 
     else:
-        click.echo("please specify `--register` or `--unregister` option")
+        click.echo(click.get_current_context().get_help())
 
 
 if __name__ == "__main__":
