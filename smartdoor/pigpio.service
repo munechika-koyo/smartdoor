@@ -1,6 +1,6 @@
 [Unit]
 Description = pigpio Daemon
-Before = smartdoor.service
+WantedBy = smartdoor.service
 
 [Service]
 WorkingDirectory = /home/pi
