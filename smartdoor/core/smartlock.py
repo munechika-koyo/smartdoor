@@ -47,7 +47,7 @@ class SmartLock:
             Device.pin_factory = PiGPIOFactory()
             self.logger.debug("using pigpio pin factory")
 
-        except ModuleNotFoundError:
+        except Exception:
             self.logger.debug("using defalut pin factory")
 
         # validate pin assignment
