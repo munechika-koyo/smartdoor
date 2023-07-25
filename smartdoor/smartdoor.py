@@ -226,6 +226,9 @@ class SmartDoor(SmartLock):
         # post to IFTTT
         self.post_ifttt(user=user, action=action)
 
+        # pause for 1 sec to avoid multiple execution
+        sleep(1)
+
     def warning_sequence(self) -> None:
         """Warning sequence when an unauthorized user touched the reader."""
         # Blink red LED and sound buzzer
