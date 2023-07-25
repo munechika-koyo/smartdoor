@@ -8,9 +8,15 @@
 
 Smartdoor system including NFC card detecting, key locking/unlocking, turning LED on/off, etc. with Raspberry Pi.
 
+## Default circuit diagram
+The default circuit diagram is shown below. If you want to use other GPIO pin numbers, please edit the configuration file (see below).
+
+![circuit](docs/circuit.png) not yet updated
+
+
 ## Quick Installation
 ```bash
-python -m pip install smartdoor
+sudo python -m pip install smartdoor
 ```
 
 ## Before getting started
@@ -20,7 +26,21 @@ Smartdoor Host system which serves the web application for NFC key management mu
 install and deploy it in adavnce. ([see here](https://github.com/munechika-koyo/smartdoor_host)).
 
 ### pigpio library
-`pigpio` library enables hardware control for PWM signals. This is the optional library for `smartdoor` package. If you want to use it, please install it in advance. ([see here](http://abyz.me.uk/rpi/pigpio/download.html))
+`pigpio` library enables hardware control for PWM signals. This is the optional library for `smartdoor` package. If you want to use it, please install it in advance ([see here](http://abyz.me.uk/rpi/pigpio/download.html)) and run the daemon by the following command:
+```bash
+sudo pigpiod
+```
+It is recommended to run the daemon automatically at the system startup. Please see the instruction in the above link.
+
+### NFC reader permission
+To access NFC reader, the permission of the device file must be set. Please execute the following.
+```bash
+sudo sh -c 'echo SUBSYSTEM==\"usb\", ACTION==\"add\", ATTRS{idVendor}==\"054c\", ATTRS{idProduct}==\"06c3\", GROUP=\"plugdev\" >> /etc/udev/rules.d/nfcdev.rules'
+sudo udevadm control -R
+```
+Then, reboot the system.
+This instruction is based on the result of `python -m nfc` command. If you use other NFC reader, please change the `idVendor` and `idProduct` according to your device.
+
 
 ## How to use
 
