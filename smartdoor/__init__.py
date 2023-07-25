@@ -64,7 +64,7 @@ def start(locked: bool):
             # If buttom is pushed
             if tag is None:
                 door.led_button.blink(on_time=0.2, off_time=0.2)
-                door.door_sequence(user="Button pusher")
+                door.door_sequence(user="Button operator")
                 door.led_button.on()
                 continue
 
