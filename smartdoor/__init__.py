@@ -196,6 +196,16 @@ def service(register: bool, unregister: bool, start: bool, stop: bool, restart: 
             click.echo("failed to register service to systemd")
 
     elif unregister:
+        # Unregister smartdoor service from systemd
+        try:
+            subprocess.run(["sudo", "systemctl", "stop", "smartdoor.service"], check=True)
+            subprocess.run(["sudo", "systemctl", "disable", "smartdoor.service"], check=True)
+            subprocess.run(["sudo", "systemctl", "daemon-reload"], check=True)
+            click.echo("unregistered service from systemd")
+        except subprocess.CalledProcessError as e:
+            click.echo(e)
+            click.echo("failed to unregister service from systemd")
+
         # Unregister pigpio daemon from systemd
         if find_spec("pigpio") is not None:
             try:
@@ -207,17 +217,17 @@ def service(register: bool, unregister: bool, start: bool, stop: bool, restart: 
                 click.echo(e)
                 click.echo("failed to unregister pigpio daemon from systemd")
 
-        # Unregister smartdoor service from systemd
-        try:
-            subprocess.run(["sudo", "systemctl", "stop", "smartdoor.service"], check=True)
-            subprocess.run(["sudo", "systemctl", "disable", "smartdoor.service"], check=True)
-            subprocess.run(["sudo", "systemctl", "daemon-reload"], check=True)
-            click.echo("unregistered service from systemd")
-        except subprocess.CalledProcessError as e:
-            click.echo(e)
-            click.echo("failed to unregister service from systemd")
-
     elif start:
+        # Start pigpio daemon
+        if find_spec("pigpio") is not None:
+            try:
+                subprocess.run(["sudo", "systemctl", "start", "pigpio.service"], check=True)
+                click.echo("started pigpio daemon")
+            except subprocess.CalledProcessError as e:
+                click.echo(e)
+                click.echo("failed to start pigpio daemon")
+
+        # Start smartdoor service
         try:
             subprocess.run(["sudo", "systemctl", "start", "smartdoor.service"], check=True)
             click.echo("started service")
@@ -226,12 +236,22 @@ def service(register: bool, unregister: bool, start: bool, stop: bool, restart: 
             click.echo("failed to start service")
 
     elif stop:
+        # Stop smartdoor service
         try:
             subprocess.run(["sudo", "systemctl", "stop", "smartdoor.service"], check=True)
             click.echo("stopped service")
         except subprocess.CalledProcessError as e:
             click.echo(e)
             click.echo("failed to stop service")
+
+        # Stop pigpio daemon
+        if find_spec("pigpio") is not None:
+            try:
+                subprocess.run(["sudo", "systemctl", "stop", "pigpio.service"], check=True)
+                click.echo("stopped pigpio daemon")
+            except subprocess.CalledProcessError as e:
+                click.echo(e)
+                click.echo("failed to stop pigpio daemon")
 
     elif restart:
         try:
