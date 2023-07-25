@@ -120,7 +120,7 @@ class SmartDoor(SmartLock):
             "iterations": 5,
             "interval": 0.5,
         }
-        tag = self.clf.connect(rdwr=rdwr_options, terminate=self.button.is_pushed)
+        tag = self.clf.connect(rdwr=rdwr_options, terminate=self.button.is_pressed)
 
         return tag
 
