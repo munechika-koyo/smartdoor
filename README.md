@@ -30,7 +30,8 @@ install and deploy it in adavnce. ([see here](https://github.com/munechika-koyo/
 ```bash
 sudo pigpiod
 ```
-It is recommended to run the daemon automatically at the system startup. Please see the instruction in the above link.
+It is recommended to run the daemon automatically at the system startup. If `pigpio` is installed
+and impotable from Python, `smartdoor` package will automatically register it in `systemd` service (see below).
 
 ### NFC reader permission
 To access NFC reader, the permission of the device file must be set. Please execute the following.
@@ -73,7 +74,10 @@ to `systemd`, execute the following command:
 ```bash
 smartdoor service --register
 ```
-Then, the service will be ready for start. To manually start it, execute the following command:
+Then, the service will be ready for start. Simaltenously, the `pigpiod` service will be registered
+if `pigpio` library is installed.
+
+To manually start it, execute the following command:
 ```bash
 smartdoor service --start
 ```

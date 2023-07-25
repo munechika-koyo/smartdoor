@@ -7,6 +7,7 @@ Some CLIs including main sequence is implemented here.
 from __future__ import annotations
 
 import subprocess
+from importlib.util import find_spec
 from logging import config as log_config
 from logging import getLogger
 from pathlib import Path
@@ -161,12 +162,30 @@ def service(register: bool, unregister: bool, start: bool, stop: bool, restart: 
 
     You can also start/stop/restart service by `--start`, `--stop`, `--restart` option. If you want
     to show service status, use `--status` option.
+
+    If `pigpio` is installed, launching `pigpio` daemon is also registered to systemd automatically.
     """
     if register:
+        # Register pigpio daemon to systemd
+        if find_spec("pigpio") is not None:
+            try:
+                service_file = Path(__file__).parent / "pigpiod.service"
+                subprocess.run(
+                    ["sudo", "systemctl", "link", str(service_file)],
+                    check=True,
+                )
+                subprocess.run(["sudo", "systemctl", "daemon-reload"], check=True)
+                subprocess.run(["sudo", "systemctl", "enable", "pigpiod.service"], check=True)
+                click.echo("registered pigpio daemon to systemd")
+            except subprocess.CalledProcessError as e:
+                click.echo(e)
+                click.echo("failed to register pigpio daemon to systemd")
+
+        # Register smartdoor service to systemd
         try:
             service_file = Path(__file__).parent / "smartdoor.service"
             subprocess.run(
-                ["sudo", "ln", "-s", str(service_file), "/etc/systemd/system/smartdoor.service"],
+                ["sudo", "systemctl", "link", str(service_file)],
                 check=True,
             )
             subprocess.run(["sudo", "systemctl", "daemon-reload"], check=True)
@@ -177,10 +196,21 @@ def service(register: bool, unregister: bool, start: bool, stop: bool, restart: 
             click.echo("failed to register service to systemd")
 
     elif unregister:
+        # Unregister pigpio daemon from systemd
+        if find_spec("pigpio") is not None:
+            try:
+                subprocess.run(["sudo", "systemctl", "stop", "pigpiod.service"], check=True)
+                subprocess.run(["sudo", "systemctl", "disable", "pigpiod.service"], check=True)
+                subprocess.run(["sudo", "systemctl", "daemon-reload"], check=True)
+                click.echo("unregistered pigpio daemon from systemd")
+            except subprocess.CalledProcessError as e:
+                click.echo(e)
+                click.echo("failed to unregister pigpio daemon from systemd")
+
+        # Unregister smartdoor service from systemd
         try:
             subprocess.run(["sudo", "systemctl", "stop", "smartdoor.service"], check=True)
             subprocess.run(["sudo", "systemctl", "disable", "smartdoor.service"], check=True)
-            subprocess.run(["sudo", "rm", "/etc/systemd/system/smartdoor.service"], check=True)
             subprocess.run(["sudo", "systemctl", "daemon-reload"], check=True)
             click.echo("unregistered service from systemd")
         except subprocess.CalledProcessError as e:
