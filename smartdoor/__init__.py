@@ -25,7 +25,7 @@ except ImportError:
 
 from .smartdoor import SmartDoor
 
-__version__ = "2.0.0.dev2"
+__version__ = "2.0.0.dev3"
 __all__ = ["SmartDoor"]
 
 
@@ -95,7 +95,7 @@ def start(locked: bool):
 
 @cli.command()
 @click.option("--debug", "-d", is_flag=True, help="show debug log")
-def show_log(debug: bool):
+def logs(debug: bool):
     """Show logs of SmartDoor system.
 
     logs are stored in `~/smartdoor.log` or `~/smartdoor_debug.log`. If you want to show debug log,
