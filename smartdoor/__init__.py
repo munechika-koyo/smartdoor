@@ -26,7 +26,7 @@ except ImportError:
 
 from .smartdoor import SmartDoor
 
-__version__ = "2.0.0.dev3"
+__version__ = "2.0.0.dev4"
 __all__ = ["SmartDoor"]
 
 
@@ -169,13 +169,13 @@ def service(register: bool, unregister: bool, start: bool, stop: bool, restart: 
         # Register pigpio daemon to systemd
         if find_spec("pigpio") is not None:
             try:
-                service_file = Path(__file__).parent / "pigpiod.service"
+                service_file = Path(__file__).parent / "pigpio.service"
                 subprocess.run(
                     ["sudo", "systemctl", "link", str(service_file)],
                     check=True,
                 )
                 subprocess.run(["sudo", "systemctl", "daemon-reload"], check=True)
-                subprocess.run(["sudo", "systemctl", "enable", "pigpiod.service"], check=True)
+                subprocess.run(["sudo", "systemctl", "enable", "pigpio.service"], check=True)
                 click.echo("registered pigpio daemon to systemd")
             except subprocess.CalledProcessError as e:
                 click.echo(e)
@@ -199,8 +199,8 @@ def service(register: bool, unregister: bool, start: bool, stop: bool, restart: 
         # Unregister pigpio daemon from systemd
         if find_spec("pigpio") is not None:
             try:
-                subprocess.run(["sudo", "systemctl", "stop", "pigpiod.service"], check=True)
-                subprocess.run(["sudo", "systemctl", "disable", "pigpiod.service"], check=True)
+                subprocess.run(["sudo", "systemctl", "stop", "pigpio.service"], check=True)
+                subprocess.run(["sudo", "systemctl", "disable", "pigpio.service"], check=True)
                 subprocess.run(["sudo", "systemctl", "daemon-reload"], check=True)
                 click.echo("unregistered pigpio daemon from systemd")
             except subprocess.CalledProcessError as e:
