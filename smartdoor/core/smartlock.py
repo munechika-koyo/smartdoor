@@ -134,7 +134,7 @@ class SmartLock:
         self.led_green.off()
 
         # Red LED blinking
-        self.led_red.blink(on_time=0.2, off_time=0.2)
+        self.led_red.blink(on_time=0.1, off_time=0.1)
 
         # sound buzzer
         self.buzzer.beep(on_time=0.1, off_time=0.05, n=2)
@@ -169,7 +169,7 @@ class SmartLock:
         self.led_red.off()
 
         # Green LED blinking
-        self.led_green.blink(on_time=0.2, off_time=0.2)
+        self.led_green.blink(on_time=0.1, off_time=0.1)
 
         # sound buzzer
         self.buzzer.beep(on_time=0.1, off_time=0.05, n=3)

@@ -26,7 +26,7 @@ except ImportError:
 
 from .smartdoor import SmartDoor
 
-__version__ = "2.0.0.dev4"
+__version__ = "2.0.0.dev5"
 __all__ = ["SmartDoor"]
 
 
