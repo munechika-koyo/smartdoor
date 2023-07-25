@@ -58,6 +58,7 @@ class SmartLock:
         self.led_red = LED(pins["LED_red"])
         self.led_green = LED(pins["LED_green"])
         self.led_button = LED(pins["LED_button"])
+        self.led_button.on()
 
         # === Push button switch ===
         self.button = Button(pins["button"])
@@ -108,6 +109,13 @@ class SmartLock:
         if not isinstance(value, bool):
             raise TypeError("locked must be a bool value")
         self._locked = value
+        # update LED status
+        if self._locked:
+            self.led_red.on()
+            self.led_green.off()
+        else:
+            self.led_red.off()
+            self.led_green.on()
 
     def lock(self) -> None:
         """Excute Locking sequence.
