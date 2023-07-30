@@ -5,6 +5,7 @@
 
 [![GitHub](https://img.shields.io/github/license/munechika-koyo/cherab_phix)](https://opensource.org/licenses/BSD-3-Clause)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/charliermarsh/ruff/main/assets/badge/v2.json)](https://github.com/charliermarsh/ruff)
+[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/munechika-koyo/smartdoor/main.svg)](https://results.pre-commit.ci/latest/github/munechika-koyo/smartdoor/main)
 
 Smartdoor system including NFC card detecting, key locking/unlocking, turning LED on/off, etc. with Raspberry Pi.
 
