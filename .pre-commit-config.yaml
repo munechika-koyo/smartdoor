@@ -1,0 +1,54 @@
+ci:
+  autofix_prs: true
+  autoupdate_schedule: quarterly
+
+default_language_version:
+  node: 16.15.0
+
+repos:
+
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v4.4.0
+  hooks:
+  - id: check-ast
+  - id: trailing-whitespace
+  - id: end-of-file-fixer
+    exclude: VERSION
+  - id: check-merge-conflict
+    exclude: .*\.rst
+  - id: check-symlinks
+  - id: check-case-conflict
+  - id: check-json
+  - id: check-toml
+  - id: check-yaml
+
+# validate pyproject.toml
+- repo: https://github.com/abravalheri/validate-pyproject
+  rev: v0.13
+  hooks:
+  - id: validate-pyproject
+
+- repo: https://github.com/psf/black
+  rev: 23.7.0
+  hooks:
+  - id: black
+
+- repo: https://github.com/charliermarsh/ruff-pre-commit
+  rev: v0.0.280
+  hooks:
+  - id: ruff
+    args: [--fix, --exit-non-zero-on-fix]
+
+- repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
+  rev: v2.10.0
+  hooks:
+  - id: pretty-format-yaml
+    args: [--autofix, --indent, '2']
+
+# for docstrings in python codes
+- repo: https://github.com/myint/docformatter
+  rev: v1.7.5
+  hooks:
+  - id: docformatter
+    additional_dependencies: [tomli]
+    args: [--in-place]

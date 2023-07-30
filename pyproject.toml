@@ -1,0 +1,77 @@
+[build-system]
+requires = ["flit_core>=3.0,<4", "wheel"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "smartdoor"
+readme = "README.md"
+authors = [{name = "Koyo Munechika", email = "munechika.koyo@torus.nr.titech.ac.jp"}]
+maintainers = [{name = "Koyo Munechika", email = "munechika.koyo@torus.nr.titech.ac.jp"}]
+license = { file = "LICENSE.md" }
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: BSD License",
+    "Natural Language :: English",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Home Automation",
+    "Topic :: Security",
+]
+requires-python = ">=3.9"
+dependencies = [
+    "rich-click",
+    "requests",
+    "nfcpy",
+    "gpiozero",
+    'tomli; python_version < "3.11"',
+]
+dynamic = ["version", "description"]
+
+[project.optional-dependencies]
+dev = [
+    "flit",
+    "pytest",
+    "black",
+    "ruff",
+    "mypy",
+    "pre-commit",
+]
+
+[project.urls]
+Home = "https://github.com/munechika-koyo/smartdoor"
+
+[project.scripts]
+smartdoor = "smartdoor:cli"
+
+[tool.flit.sdist]
+exclude = ["doc/"]
+
+[tool.black]
+line-length = 100
+
+[tool.ruff]
+line-length = 100
+
+# Enable Pyflakes `E` and `F` codes by default.
+select = ["E", "F", "W", "I", "N", "B", "NPY"]
+ignore = ["E501", "N806", "E402"]
+
+# Allow autofix for all enabled rules (when `--fix`) is provided.
+fixable = ["E", "F", "W", "I", "B", "NPY"]
+unfixable = ["E501"]
+
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+# Assume Python 3.10
+target-version = "py310"
+
+[tool.docformatter]
+style = "numpy"
+recursive = true
+wrap-summaries = 100
+wrap-descriptions = 100

@@ -1,0 +1,14 @@
+[Unit]
+Description = SmartDoor Client System
+
+[Service]
+WorkingDirectory = /home/pi
+ExecStart = smartdoor start
+Restart = always
+Type = simple
+User = pi
+Group = pi
+KillSignal=SIGINT
+
+[Install]
+WantedBy = multi-user.target

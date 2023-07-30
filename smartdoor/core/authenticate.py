@@ -1,35 +1,46 @@
-"""
-This module provides authentication tools for IDm with database requests
-"""
+"""This module provides IDm authentication functions communicating with database through web api."""
+from __future__ import annotations
+
+import sys
+from logging import getLogger
+
 from requests import Request, Session
+
+module_logger = getLogger(__name__)
 
 
 class AuthIDm:
-    """
-    Authentication for IDm with requesting data to database through web api.
+    """Authentication for IDm using web api.
 
     Parameters
     ----------
-    url : str
-        url address to post IDm data
-    room : str
-        name of room to authenticate
-    timeout : int, optional
+    url
+        URL address to post IDm data
+    room
+        name of room to authenticate, e.g. "423"
+    timeout
         session timeout to connect to the database, by default 10 sec
     """
-    def __init__(self, url, room, timeout=10) -> None:
 
+    logger = getLogger("main").getChild("AuthIDm")
+
+    def __init__(self, url: str, room: str, timeout: float = 10) -> None:
         try:
-            # get csrf token in cookies
+            # get CSRF token in cookies
             session = Session()
             session.get(url, timeout=timeout, verify=False)
 
             # instantiate request object
-            headers = {"Content-type": "application/json", "X-CSRFToken": session.cookies["csrftoken"]}
+            headers = {
+                "Content-type": "application/json",
+                "X-CSRFToken": session.cookies["csrftoken"],
+            }
             req = Request("POST", url, headers=headers)
 
-        except TimeoutError:
-            raise TimeoutError(f"cannot establish the connection to {url}")
+        except Exception as e:
+            self.logger.error(f"cannot establish the connection to {url}")
+            self.logger.debug(f"{type(e)}: {e}")
+            sys.exit(1)
 
         # save variables as properties
         self._session = session
@@ -37,46 +48,41 @@ class AuthIDm:
         self._room = room
 
     @property
-    def session(self):
-        """
-        :obj:`.requests.sessions.Session`: session object
-        """
+    def session(self) -> Session:
+        """Session object."""
         return self._session
 
     @property
-    def request(self):
-        """
-        :obj:`.requests.models.Request`: request object
-        """
+    def request(self) -> Request:
+        """Request object."""
         return self._request
 
     @property
-    def room(self):
-        """
-        str: room name
-        """
+    def room(self) -> str:
+        """Room name."""
         return self._room
 
-    def authenticate(self, idm, timeout=5):
-        """
-        IDm authentication method
+    def authenticate(self, idm: str, timeout: float = 5) -> str | None:
+        """IDm authentication method.
+
         If the given idm is validated, returns user name which is registered in database.
         Otherwise returns None.
 
         Parameters
         ----------
-        idm : str
+        idm
             Hexadecimal IDm converted to string
-        timeout : int, optional
-            post requesting timeout to the database, by default 10 sec
+        timeout
+            post requesting timeout to the database, by default 5 sec
 
         Returns
         -------
-        str or null
+        str | None
             username which is registered in database, if not, retuning None.
         """
         if not isinstance(idm, str):
-            raise TypeError("idm must be string containg 16 hexadecimal digits.")
+            self.logger.error("idm must be string containing 16 hexadecimal digits.")
+            return None
 
         self._request.json = {"idm": idm}
 
@@ -91,13 +97,13 @@ class AuthIDm:
                     return data["name"]
             return None
 
-        except Exception:
+        except Exception as e:
+            self.logger.error(f"{type(e)}: {e}")
             return None
 
     def close(self):
-        """
-        close session
-        """
+        """Close session."""
+        self.logger.debug("close session")
         self._session.close()
 
 

@@ -1,280 +1,285 @@
-import os
-import datetime
-import requests
-from requests.exceptions import Timeout, TooManyRedirects, RequestException
-import RPi.GPIO as GPIO
-from binascii import hexlify
-from nfc import ContactlessFrontend
-from collections import deque
-from yaml import safe_load
-from logging import Logger, getLogger
+"""This module provides a main class of SmartDoor system."""
+from __future__ import annotations
 
-from .core import SmartLock
-from .core import AuthIDm
+from binascii import hexlify
+from collections import deque
+from datetime import datetime
+from logging import getLogger
+from pathlib import Path
+from time import sleep
+
+import requests
+from nfc import ContactlessFrontend
+from nfc.tag import Tag
+from urllib3 import disable_warnings
+from urllib3.exceptions import InsecureRequestWarning
+
+try:
+    import tomllib
+except ImportError:
+    import tomli as tomllib
+
+from .core import AuthIDm, SmartLock
+
+# set invisible of https secure warning
+disable_warnings(InsecureRequestWarning)
+
+module_logger = getLogger(__name__)
 
 
 class SmartDoor(SmartLock):
-    """Smart Door system class
-    This class has some fetures of door lock/unlock seaquence, reading NFC,
+    """Smart Door system class.
 
+    This class has some main fetures of door lock/unlock seaquence, reading/authenticate NFC's IDm,
+    and post to IFTTT for notification.
 
-    Parameters
-    ----------
-    path : str
-        path to configure file formated by yaml where several configuration is written.
-    log : :obj:`.logging.RootLogger`
-        logging instance
+    The user-specific configuration file (`~/.config/smartdoor.toml`) is loaded automatically.
     """
-    def __init__(self, path=None, log=None) -> None:
-        # Load configration yaml file
-        if path is None:
-            raise ValueError("path must be the name to the appropriate configuration yaml file.")
-        _, ext = os.path.splitext(os.path.basename(path))
-        if ext != ".yaml":
-            raise ValueError("configuration file must be formated by yaml.")
-        with open(path, "r") as f:
-            conf = safe_load(f)
+
+    # define class logger
+    logger = getLogger("main").getChild("SmartDoor")
+
+    def __init__(self) -> None:
+        # Load default configuration file
+        with open(Path(__file__).parent / "default_config.toml", "rb") as file:
+            config = tomllib.load(file)
+
+        # Load user-specific configuration file if exists
+        config_path = Path.home() / ".config" / "smartdoor.toml"
+        if config_path.exists():
+            with config_path.open("rb") as file:
+                config.update(tomllib.load(file))
+                self.logger.debug(f"Loaded user-specific configuration file: {config_path}")
 
         # === Initialization ==================================================
-        # Logger
-        self.log = log or getLogger(__name__)
-
         # IFTTT
-        self.urls = conf["IFTTT_URLs"]
-        self._post_queue = deque()
+        self._urls: dict[str, str] = {}
+        self.urls = config["IFTTT_URLs"]
+        self._post_queue: deque = deque()
 
-        # instantiate IDm authentication class
-        self._auth = AuthIDm(conf["database"], conf["room"])
+        # IDm authentication class
+        self._auth = AuthIDm(config["auth_url"], config["room"])
 
         # NFC reader
         self._clf = ContactlessFrontend("usb")
 
         # room name
-        self._room = conf["room"]
+        self._room = config["room"]
 
         # inheritance
-        super().__init__(conf["pin"])
+        super().__init__(config["pins"])
 
     @property
-    def log(self):
-        """
-        :obj:`.logging.RootLogger`: instance of Logger object
-        """
-        return self._log
+    def urls(self) -> dict[str, str]:
+        """URL map to post to IFTTT.
 
-    @log.setter
-    def log(self, value):
-        if not isinstance(value, Logger):
-            raise TypeError("log must be an instance of logging.Logger")
-        self._log = value
-
-    @property
-    def urls(self):
-        """
-        list: URL lists to post to IFTTT
+        key is event name, value is URL string.
         """
         return self._urls
 
     @urls.setter
     def urls(self, value):
-        if not isinstance(value, list):
-            raise TypeError("urls must be list containg URL strings")
-        # TODO: check if each url is valid
-        self._urls = value
+        if not isinstance(value, dict):
+            raise TypeError(f"Invalid type of urls: {type(value)}")
+
+        for key, url in value.items():
+            if not isinstance(key, str):
+                raise TypeError(f"Invalid type of key: {type(key)}")
+            if not isinstance(url, str):
+                raise TypeError(f"Invalid type of url: {type(url)}")
+            self._urls[key] = url
 
     @property
-    def post_queue(self):
-        """
-        :obj:~`collections.deque`: queue to store values to post them to IFTTT
-        """
+    def post_queue(self) -> deque:
+        """Queue to store values to post them to IFTTT."""
         return self._post_queue
 
     @property
-    def clf(self):
-        """
-        :obj:`.nfc.clf.ContactlessFrontend`: nfcpy's Contactless Frontend class instance
-        """
+    def clf(self) -> ContactlessFrontend:
+        """Nfcpy's Contactless Frontend class instance."""
         return self._clf
 
     @property
-    def auth(self):
-        """
-        :obj:`.AuthIDm`: instance of AuthIDm class
-        """
+    def auth(self) -> AuthIDm:
+        """Instance of AuthIDm class."""
         return self._auth
 
-    def wait_ICcard_touched(self):
-        """waiting for IC card touched
-        If the button is pushed, None is returned.
-        If the KeyboadInterrupt is detected, False is returned.
+    def wait_for_touched(self) -> None | bool | Tag:
+        """Wait for the NFC card to be touched.
 
         Returns
         -------
-        tag : :obj:`nfc.tag.Tag`
-            the instance of nfcpy's Tag class.
-            If the button is pushed, None.
-            If the KeyboadInterrupt is detected, False.
+        None | bool | obj:`nfc.tag.Tag`
+            If the button is pushed, returns None.
+            If the KeyboadInterrupt is detected, returns False.
+            otherwise, returns the instance of nfcpy's Tag class.
         """
         rdwr_options = {
             "targets": ["212F"],  # detect only Felica
             "on-connect": lambda tag: False,
             "iterations": 5,
-            "interval": 0.2,
+            "interval": 0.5,
         }
-        tag = self.clf.connect(rdwr=rdwr_options, terminate=self._teminate)
+        tag = self.clf.connect(rdwr=rdwr_options, terminate=lambda: self.button.is_pressed)
 
         return tag
 
-    def _teminate(self):
-        """terminate function for self.clf.connect() method.
-        This must return only boolean value.
+    def authenticate(self, tag: Tag) -> str | None:
+        """Authenticate the approved user.
 
-        Returns
-        -------
-        bool
-            If the button is pushed, True
-            Otherwise, False.
-        """
-        return bool(GPIO.input(self.pins["switch"]))
-
-    def authenticate(self, tag):
-        """Authenticate the approved user
-        This method checks if the user who touched the IC card reader is allowed
-        to control door seaquence.
+        This method authenticates the user by the IDm of the NFC card.
 
         Parameters
         ----------
-        tag : :obj:`nfc.tag.Tag`
-            the instance of nfcpy's Tag class, which is the return value as the ``clf.connect()`` method.
+        tag
+            the instance of nfcpy's Tag class
 
         Returns
         -------
-        str
-            the user name registerd in database if not, None
+        str | None
+            If the user is approved, returns the user name.
         """
-        # turn on the both red and green LEDs
+        # turn on both red and green LEDs
         if self.locked:
-            self.PWM_LED_green.ChangeDutyCycle(100)
+            self.led_green.on()
         else:
-            self.PWM_LED_red.ChangeDutyCycle(100)
+            self.led_red.on()
 
         # extract idm
         idm = hexlify(tag.idm).decode("utf-8")
 
-        self.log.info(f"idm: {idm} is detected")
+        self.logger.debug(f"idm: {idm} is detected.")
 
         # authentication
         name = self._auth.authenticate(idm)
 
         return name
 
-    def post_IFTTT(self, user="test", action="test"):
-        """post values to IFTTT
-        This method posts the info about
-        {"value1": data, "value2": user, "value3": action}
-        as a json format. The action means the smartdoor action like a "LOCK", "UNLOCK", etc.
+    def post_ifttt(self, user: str = "test", action: str = "LOCK") -> None:
+        """Post the info to IFTTT.
+
+        This method posts the info:``{"value1": data, "value2": user, "value3": action}``
+        in a json format to IFTTT urls.
+        The action means the smartdoor action like a "LOCK", "UNLOCK", etc.
+
+        If the post is failed, the data is cached into a queue and try to post again.
 
         Parameters
         ----------
-        user : str
+        user
             user name, by default "test"
-        action : str
-            smartdoor action like "LOCK", "UNLOCK", etc, by default "test"
+        action
+            smartdoor action like "LOCK", "UNLOCK", etc, by default "LOCK"
         """
         # get current datetime
-        date_now = datetime.datetime.now()
+        date_now = datetime.now()
         date_str = date_now.strftime(r"%Y/%m/%d %H:%M:%S")
 
-        # cache values into a queue
+        # cache post values into a queue
         values = {"value1": date_str, "value2": user, "value3": action}
         self.post_queue.append(values)
 
-        # post values to urls in 3.0 sec
+        # post to IFTTT in 3 seconds connect timeout and 7.5 seconds read timeout
         try:
             while self.post_queue:
                 data = self.post_queue.popleft()
-                for url in self.urls:
-                    requests.post(url, json=data, timeout=3.0)
 
-            self.log.info("The IFTTT POST process has finished successfully.")
+                for event, url in self.urls.items():
+                    res = requests.post(url, json=data, timeout=(3.0, 7.5))
 
-        except Timeout as e:
-            self.log.error(f"Timeout Error: {e}")
+                    if res.status_code == 200:
+                        self.logger.debug(f"IFTTT post is completed: {event}")
+                    else:
+                        self.logger.error(
+                            f"IFTTT post is failed (code: {res.status_code}): {event}"
+                        )
+                        self._post_queue.appendleft(data)
+                        break
+
+            self.logger.info("IFTTT post is completed.")
+
+        except Exception:
+            self.logger.exception("IFTTT post is failed.")
             self._post_queue.appendleft(data)
 
-        except TooManyRedirects as e:
-            self.log.error(f"TooManyRedirects Error: {e}")
-            self._post_queue.appendleft(data)
-        
-        except RequestException as e:
-            self.log.error(f"{type(e)}: {e}")
-            self._post_queue.appendleft(data)
+    def door_sequence(self, user: str = "test") -> None:
+        """Door sequence.
 
-
-    def door_sequence(self, user="test"):
-        """door sequence
-        if door is locked, :obj:`.unlock` method is excuted, otherwise,
-        :obj:`.lock` method is excuted.
-        Afterwards, :obj:`.post_IFTTT` methods is excuted.
+        If the door is locked, :obj:`.unlock` method is excuted.
+        Otherwise, :obj:`.lock` method is excuted.
+        After that, the info is posted to IFTTT by :obj:`.post_ifttt` method.
 
         Parameters
         ----------
-        user : str
-            user name controling the smartdoor system, by default "test"
+        user
+            user name controlling the door, by default "test"
         """
         if self.locked:
             self.unlock()
             action = "UNLOCK"
-            self.log.info("unlocked by " + user)
+            self.logger.info(f"unlocked by {user}")
         else:
             self.lock()
             action = "LOCK"
-            self.log.info("locked by " + user)
+            self.logger.info(f"locked by {user}")
 
-        # post IFTTT
-        self.post_IFTTT(user=user, action=action)
+        # post to IFTTT
+        self.post_ifttt(user=user, action=action)
 
-    def warning_invalid_touch(self):
-        """warning sequence when the unauthorized user touches card reader.
-        """
+        # pause for 1 sec to avoid multiple execution
+        sleep(1)
+
+    def warning_sequence(self) -> None:
+        """Warning sequence when an unauthorized user touched the reader."""
         # Blink red LED and sound buzzer
-        self.PWM_LED_green.ChangeDutyCycle(0)
-        self.PWM_LED_red.ChangeDutyCycle(50)
-        self.buzzer(iteration=2, dt=0.5, interval=0.1)
+        self.led_green.off()
+        self.led_red.blink(on_time=0.1, off_time=0.1)
+        self.buzzer.beep(iteration=2, dt=0.5, interval=0.1)
+
         # log
-        self.log.info("invalid touched by an unauthorized user")
+        self.logger.info("unauthorized user touched the reader")
 
-        # post warning message
-        self.post_IFTTT(user="unauthorized user", action="INVALID TOUCH")
+        # post to IFTTT
+        self.post_ifttt(user="unauthorized user", action="INVALID TOUCH")
 
-        # set previouse LED setting
+        # restore LED
         if self.locked:
-            self.PWM_LED_red.ChangeDutyCycle(100)
+            self.led_red.on()
         else:
-            self.PWM_LED_green.ChangeDutyCycle(100)
-            self.PWM_LED_red.ChangeDutyCycle(0)
+            self.led_red.off()
+            self.led_green.on()
 
-    def start(self):
-        """start sequence
-        put the LED on and off
-        start servomotor
+    def error_sequence(self, duration: float = 2) -> None:
+        """Error sequence when an program error occurred.
+
+        The sequence is as follows:
+        - Blink all LED
+        - Sound buzzer for `duration` seconds
+        - After that, turn off all LED and buzzer
+
+        Parameters
+        ----------
+        duration
+            duration of the error sequence, by default 2 sec
         """
-        self.log.info("smartdoor system starts")
-        if self.locked:
-            self.PWM_LED_green.start(0)
-            self.PWM_LED_red.start(100)
-        else:
-            self.PWM_LED_green.start(100)
-            self.PWM_LED_red.start(0)
+        # Blink all LED
+        self.led_red.blink(on_time=0.1, off_time=0.1)
+        self.led_green.blink(on_time=0.1, off_time=0.1)
 
-        self.PWM_LED_switch.start(100)
-        self.PWM_servo.start(0)
+        # sound buzzer
+        self.buzzer.on()
+        sleep(duration)
 
-    def close(self):
-        """close sequence
-        """
-        self.log.info("excute closing sequence...")
-        self.clf.close()  # close nfc contactlessfrontend instance
-        self._auth.close()  # close database session
-        self.clean()  # cleanup of raspi GPIO
-        self.log.info("smartdoor system normally closed.")
+        # Off all LED and buzzer
+        self.buzzer.off()
+        self.led_red.off()
+        self.led_green.off()
+
+    def close(self) -> None:
+        """Close the smartdoor system."""
+        try:
+            self.clf.close()  # close nfc contactlessfrontend instance
+            self._auth.close()  # close authentication session
+            self.logger.info("smartdoor system is closed.")
+        except Exception:
+            self.logger.exception("failed to close smartdoor system.")

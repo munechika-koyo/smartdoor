@@ -1,0 +1,14 @@
+[Unit]
+Description = pigpio Daemon
+WantedBy = smartdoor.service
+
+[Service]
+WorkingDirectory = /home/pi
+ExecStart = pigpiod -g
+Restart = always
+Type = simple
+User = root
+Group = root
+
+[Install]
+WantedBy = multi-user.target
