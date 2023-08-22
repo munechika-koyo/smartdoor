@@ -234,7 +234,7 @@ class SmartDoor(SmartLock):
         # Blink red LED and sound buzzer
         self.led_green.off()
         self.led_red.blink(on_time=0.1, off_time=0.1)
-        self.buzzer.beep(iteration=2, dt=0.5, interval=0.1)
+        self.buzzer.beep(n=2, on_time=0.5, off_time=0.1)
 
         # log
         self.logger.info("unauthorized user touched the reader")
