@@ -1,4 +1,5 @@
 """This module provides a main class of SmartDoor system."""
+
 from __future__ import annotations
 
 from binascii import hexlify
